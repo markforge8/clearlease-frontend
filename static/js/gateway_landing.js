@@ -52,7 +52,7 @@ async function handleAnalyze() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                text: leaseText
+                contract_text: leaseText
             })
         });
 
@@ -269,4 +269,5 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
 
