@@ -167,7 +167,7 @@ function displayOverview(overview) {
     let html = '';
     
     if (overview.attention_level) {
-        html += `<div class="overview-attention">Attention Level: ${overview.attention_level}</div>`;
+        html += `<div class="overview-attention">Scan Status: ${overview.attention_level} (preliminary)</div>`;
     }
     
     if (overview.summary) {
@@ -198,8 +198,8 @@ function displayRiskItems(riskItems) {
                     <div class="risk-item-message">${escapeHtml(item.message)}</div>
                     ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
                     <div class="risk-item-cta" style="margin-top: 15px;">
-                        <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Learn more</button>
-                    </div>
+                    <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Understand the uncertainty</button>
+                </div>
                 </div>
             `;
         }).join('');
@@ -215,9 +215,9 @@ function displayRiskItems(riskItems) {
 function addHandoffSection() {
     const handoffHtml = `
         <div class="handoff-section" style="margin-top: 3rem; padding: 2rem; background-color: #f8f8f8; border-radius: 8px; text-align: center;">
-            <h3 style="font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin-bottom: 1rem;">Want a more comprehensive analysis?</h3>
+            <h3 style="font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin-bottom: 1rem;">Can you be certain about these findings?</h3>
             <p style="font-size: 1rem; color: #666666; margin-bottom: 2rem; line-height: 1.5;">
-                This initial scan provides basic insights. For detailed risk assessment and personalized next steps, unlock our comprehensive risk guide.
+                This initial scan only identifies potential issues based on surface-level patterns. The actual risk depends on specific contract language and local regulations.
             </p>
             <button class="analyze-button" onclick="window.location.href='/templates/explain_v2_handoff.html'" style="width: auto; display: inline-block;">
                 Unlock Next-Step Risk Guide
