@@ -200,7 +200,7 @@ function displayRiskItems(riskItems) {
                 <div class="risk-item-message">${escapeHtml(item.message)}</div>
                 ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
                 <div class="risk-item-cta" style="margin-top: 15px;">
-                    <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html', '_blank')">Learn more</button>
+                    <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Learn more</button>
                 </div>
             </div>
         `;

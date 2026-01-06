@@ -45,6 +45,7 @@ body {
     color: #333333;
     line-height: 1.6;
     font-weight: 400;
+    white-space: pre-wrap;
 }
 
 .content-headline {

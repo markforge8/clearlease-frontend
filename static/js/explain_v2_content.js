@@ -8,11 +8,57 @@
     'use strict';
 
     /**
+     * Map risk codes to risk types
+     */
+    function mapRiskCodeToType(riskCode) {
+        const riskMap = {
+            // Auto-renewal related codes
+            'auto_renewal': 'auto_renewal',
+            'automatic_renewal': 'auto_renewal',
+            'renewal': 'auto_renewal',
+            'extension': 'auto_renewal',
+            
+            // Liability related codes
+            'liability': 'liability',
+            'indemnity': 'liability',
+            'hold_harmless': 'liability',
+            'damages': 'liability',
+            'insurance': 'liability',
+            
+            // Unilateral changes related codes
+            'unilateral': 'unilateral_changes',
+            'modification': 'unilateral_changes',
+            'amendment': 'unilateral_changes',
+            'discretion': 'unilateral_changes',
+            
+            // Default to general
+            'general': 'general'
+        };
+        
+        return riskMap[riskCode.toLowerCase()] || 'general';
+    }
+
+    /**
      * Initialize: Load data and populate content
      */
     function init() {
         // Load Explain v2 data (assumed to be passed from backend)
-        const explainV2Data = window.explainV2Data || getDefaultData();
+        let explainV2Data = window.explainV2Data;
+        
+        // Check if risk type is specified in URL or data
+        if (!explainV2Data) {
+            // Get risk type from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            let riskType = urlParams.get('risk_type');
+            
+            // Map risk code to risk type
+            if (riskType) {
+                riskType = mapRiskCodeToType(riskType);
+                explainV2Data = getRiskSpecificData(riskType);
+            } else {
+                explainV2Data = getDefaultData();
+            }
+        }
         
         // Populate content
         populateContent(explainV2Data);
@@ -26,33 +72,24 @@
         const escapeWindowText = document.getElementById('escape_window_text');
         if (escapeWindowText && data.escape_window) {
             const conditions = data.escape_window.conditions || '';
-            escapeWindowText.textContent = conditions || 
-                'If you cancel before the specified date, it won\'t automatically renew; if you miss that date, the contract will continue automatically.';
+            escapeWindowText.textContent = conditions;
         }
 
         // Headline
         const headlineText = document.getElementById('headline_text');
         if (headlineText && data.headline) {
-            headlineText.textContent = data.headline || 
-                'If you miss a specific time point, the cost of exiting later will increase.';
+            headlineText.textContent = data.headline;
         }
 
-        // Core logic
+        // Hide unused sections
         const coreLogicText = document.getElementById('core_logic_text');
-        if (coreLogicText && data.core_logic) {
-            coreLogicText.textContent = data.core_logic || 
-                'If you miss a specific time window, the contract will automatically renew, and by then canceling will cost more than it does now.';
+        if (coreLogicText) {
+            coreLogicText.parentElement.parentElement.style.display = 'none';
         }
 
-        // User actions
         const userActionsList = document.getElementById('user_actions_list');
-        if (userActionsList && data.user_actions && Array.isArray(data.user_actions)) {
-            userActionsList.innerHTML = '';
-            data.user_actions.forEach(action => {
-                const li = document.createElement('li');
-                li.textContent = action;
-                userActionsList.appendChild(li);
-            });
+        if (userActionsList) {
+            userActionsList.parentElement.parentElement.style.display = 'none';
         }
     }
 
@@ -62,16 +99,49 @@
     function getDefaultData() {
         return {
             escape_window: {
-                conditions: 'If you cancel before the specified date, it won\'t automatically renew; if you miss that date, the contract will continue automatically.'
+                conditions: `Why this matters: Automatic renewal clauses can extend your tenancy without active consent, potentially trapping you in undesirable rental terms or locations if your circumstances change. This creates financial and logistical burdens if you need to relocate on short notice.
+
+When this becomes risky: This clause becomes dangerous when cancellation windows are unusually brief (less than 30 days), notification requirements are overly strict, or landlords fail to remind tenants of upcoming deadlines.
+
+What to look for: Search for phrases like "automatic renewal," "extension term," or "renewal notice period." Note the exact number of days required for cancellation notice, whether written notice is mandatory, and if the landlord must provide advance written reminder of the renewal date.`
             },
-            headline: 'If you miss a specific time point, the cost of exiting later will increase.',
-            core_logic: 'If you miss a specific time window, the contract will automatically renew, and by then canceling will cost more than it does now.',
-            user_actions: [
-                'Note the deadline for making a decision and set a reminder',
-                'Consider whether to continue before the deadline',
-                'Find out what the cost would be if you miss the cancellation window'
-            ]
+            headline: `Why this matters: Liability clauses determine your financial responsibility for damages, injuries, or accidents that occur on the property. Overly broad liability terms can expose you to significant financial risk beyond normal tenant obligations.
+
+When this becomes risky: This becomes problematic if the clause includes "joint and several liability" for all tenants, waives your right to dispute claims, or holds you responsible for damages caused by third parties or natural disasters.
+
+What to look for: Look for language like "hold harmless," "indemnify," "liability for damages," or "waiver of claims." Pay attention to any clauses that attempt to limit the landlord's liability while expanding yours.`
         };
+    }
+
+    /**
+     * Get specialized data for different risk types
+     */
+    function getRiskSpecificData(riskType) {
+        const riskData = {
+            'auto_renewal': {
+                conditions: `Why this matters: Automatic renewal clauses can extend your tenancy without active consent, potentially trapping you in undesirable rental terms or locations if your circumstances change. This creates financial and logistical burdens if you need to relocate on short notice.
+
+When this becomes risky: This clause becomes dangerous when cancellation windows are unusually brief (less than 30 days), notification requirements are overly strict, or landlords fail to remind tenants of upcoming deadlines.
+
+What to look for: Search for phrases like "automatic renewal," "extension term," or "renewal notice period." Note the exact number of days required for cancellation notice, whether written notice is mandatory, and if the landlord must provide advance written reminder of the renewal date.`
+            },
+            'liability': {
+                conditions: `Why this matters: Liability clauses determine your financial responsibility for damages, injuries, or accidents that occur on the property. Overly broad liability terms can expose you to significant financial risk beyond normal tenant obligations.
+
+When this becomes risky: This becomes problematic if the clause includes "joint and several liability" for all tenants, waives your right to dispute claims, or holds you responsible for damages caused by third parties or natural disasters.
+
+What to look for: Look for language like "hold harmless," "indemnify," "liability for damages," or "waiver of claims." Pay attention to any clauses that attempt to limit the landlord's liability while expanding yours.`
+            },
+            'unilateral_changes': {
+                conditions: `Why this matters: Unilateral change clauses allow landlords to modify lease terms without your consent, creating a power imbalance that can erode your tenant rights over time. This can lead to unexpected rent increases, new fees, or stricter rules.
+
+When this becomes risky: This clause becomes concerning if it allows changes to fundamental terms like rent, security deposit requirements, or maintenance responsibilities without reasonable notice or justification.
+
+What to look for: Watch for phrases like "reserve the right to modify," "at landlord's discretion," or "without prior notice." Check if there are any limitations on the types of changes allowed or if you have the right to terminate the lease in response to significant changes.`
+            }
+        };
+        
+        return riskData[riskType] || getDefaultData();
     }
 
     // Initialize on DOM ready
