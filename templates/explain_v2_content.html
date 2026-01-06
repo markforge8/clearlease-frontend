@@ -8,58 +8,43 @@
 </head>
 <body>
     <main class="content-container">
-        <!-- Phase 1: Auto-show escape_window -->
+        <!-- Content sections - all visible by default -->
         <section class="content-item visible" data-item="escape_window">
             <div class="content-block">
                 <p class="content-text" id="escape_window_text"></p>
             </div>
         </section>
 
-        <!-- Pacing brake: Show next button -->
-        <section class="pacing-brake" id="pacing_brake">
-            <button class="show-next-button" id="show_next_btn">Show next</button>
-        </section>
-
-        <!-- Phase 2: Headline (revealed on button click) -->
-        <section class="content-item hidden" data-item="headline">
+        <section class="content-item visible" data-item="headline">
             <div class="content-block">
                 <h2 class="content-headline" id="headline_text"></h2>
             </div>
         </section>
 
-        <!-- Progressive items: core_logic -->
-        <section class="content-item hidden" data-item="core_logic">
+        <section class="content-item visible" data-item="core_logic">
             <div class="content-block">
                 <p class="content-text" id="core_logic_text"></p>
             </div>
         </section>
 
-        <!-- Progressive items: user_actions -->
-        <section class="content-item hidden" data-item="user_actions">
+        <section class="content-item visible" data-item="user_actions">
             <div class="content-block">
                 <ul class="actions-list" id="user_actions_list"></ul>
             </div>
         </section>
 
-        <!-- Re-centering line (inserted after 2-3 items) -->
-        <section class="content-item hidden" data-item="recentering">
+        <section class="content-item visible" data-item="recentering">
             <div class="content-block recentering-block">
                 <p class="recentering-text">This doesn't mean the contract is unfair overall.</p>
             </div>
         </section>
 
-        <!-- Action Translation panel -->
-        <section class="content-item hidden" data-item="action_translation">
+        <section class="content-item visible" data-item="action_translation">
             <div class="content-block action-translation-block">
                 <p class="action-translation-text">This usually matters only in specific situations.</p>
                 <p class="action-translation-text">For now, nothing needs to be done.</p>
                 <p class="action-translation-text">If you ever want to revisit it, this is the section to look at.</p>
             </div>
-        </section>
-
-        <!-- CTA Button to Handoff -->
-        <section style="text-align: center; margin-top: 40px;">
-            <button class="show-next-button" onclick="window.location.href='/templates/explain_v2_handoff.html'">Continue to Summary</button>
         </section>
     </main>
     
