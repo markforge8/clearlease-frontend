@@ -171,7 +171,9 @@ function displayOverview(overview) {
     }
     
     if (overview.summary) {
-        html += `<div class="overview-text">${escapeHtml(overview.summary)}</div>`;
+        // Remove any non-English text from summary
+        const englishSummary = overview.summary.replace(/[^\x00-\x7F]+/g, '');
+        html += `<div class="overview-text">${escapeHtml(englishSummary || 'Initial scan completed. Please review the identified clauses below.')}</div>`;
     }
 
     overviewContainer.innerHTML = html;
@@ -198,7 +200,13 @@ function displayRiskItems(riskItems) {
                     <div class="risk-item-message">${escapeHtml(item.message)}</div>
                     ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
                     <div class="risk-item-cta" style="margin-top: 15px;">
-                    <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Understand the uncertainty</button>
+                    <button class="learn-more-btn" onclick="showExplanation('${item.risk_code || 'general'}', '${escapeHtml(item.title)}')">Understand the uncertainty</button>
+                    <div class="explanation-section" id="explanation-${item.risk_code || 'general'}" style="display: none; margin-top: 15px; padding: 15px; background-color: #f8f8f8; border-radius: 6px;">
+                        <h4>Uncertainty Analysis</h4>
+                        <p>This clause presents potential risks that depend on your specific circumstances and local laws. The initial assessment may not capture all contextual factors.</p>
+                        <p>The actual impact could vary based on how this clause interacts with other terms in your lease agreement.</p>
+                        <button class="learn-more-btn" onclick="this.parentElement.style.display='none'">Close</button>
+                    </div>
                 </div>
                 </div>
             `;
@@ -300,5 +308,15 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Show explanation for a clause
+ */
+function showExplanation(riskCode, clauseTitle) {
+    const explanationSection = document.getElementById('explanation-' + riskCode);
+    if (explanationSection) {
+        explanationSection.style.display = 'block';
+    }
 }
 
