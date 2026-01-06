@@ -27,11 +27,15 @@ const loginMessage = document.getElementById('loginMessage');
 const userInfo = document.getElementById('userInfo');
 const userEmail = document.getElementById('userEmail');
 const logoutButton = document.getElementById('logoutButton');
+const explicitLoginButton = document.getElementById('explicitLoginButton');
 
 // Event Listeners
 analyzeButton.addEventListener('click', handleAnalyze);
 loginButton.addEventListener('click', handleLogin);
 logoutButton.addEventListener('click', handleLogout);
+explicitLoginButton.addEventListener('click', () => {
+    loginSection.style.display = 'block';
+});
 
 // Handle Enter key in textarea (Ctrl+Enter or Cmd+Enter)
 leaseTextarea.addEventListener('keydown', (e) => {
@@ -142,7 +146,7 @@ function clearUserInfo() {
  * Check user status and update UI accordingly
  */
 async function checkUserStatus() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     
     if (!user) {
         // User is not logged in, show free version
@@ -192,7 +196,7 @@ async function checkUserStatus() {
  */
 async function showFreeVersion() {
     // Check if user is logged in
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     
     // For free version, show login prompt if user is not logged in
     if (!user) {
@@ -291,6 +295,16 @@ async function handleAnalyze() {
 
     if (leaseText.length < 50) {
         showError('Please provide a longer lease agreement text (at least 50 characters).');
+        return;
+    }
+
+    // Check if user is logged in
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    if (!user) {
+        // User is not logged in, show login section
+        loginSection.style.display = 'block';
+        showError('Please login first to analyze your lease agreement.');
         return;
     }
 
