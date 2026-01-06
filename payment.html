@@ -42,6 +42,7 @@
         
         .stripe-container {
             margin: 3rem 0;
+            min-height: 100px;
         }
         
         .payment-button {
@@ -131,7 +132,7 @@
                 <div id="payment-element"></div>
             </div>
             
-            <button id="submit" class="payment-button">
+            <button id="submit" class="payment-button" disabled>
                 Pay Now
             </button>
             
@@ -155,7 +156,9 @@
 
     <script>
         // Initialize Stripe
-        const stripe = Stripe('pk_test_your_publishable_key_here');
+        let stripe = null;
+        let elements = null;
+        let paymentElement = null;
         
         // Create payment intent (this should be done server-side in production)
         async function createPaymentIntent() {
@@ -168,29 +171,50 @@
         
         // Setup Stripe Elements
         async function setupStripe() {
-            const { clientSecret } = await createPaymentIntent();
-            
-            const elements = stripe.elements({
-                clientSecret: clientSecret,
-                appearance: {
-                    theme: 'stripe',
-                    variables: {
-                        colorPrimary: '#1a1a1a',
-                        colorBackground: '#ffffff',
-                        colorText: '#1a1a1a',
-                        colorDanger: '#d32f2f',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                        spacingUnit: '2px',
-                        borderRadius: '6px',
-                        fontSize: '16px',
-                    },
+            try {
+                // Initialize Stripe
+                stripe = Stripe('pk_test_your_publishable_key_here');
+                
+                const { clientSecret } = await createPaymentIntent();
+                
+                elements = stripe.elements({
+                    clientSecret: clientSecret,
+                    appearance: {
+                        theme: 'stripe',
+                        variables: {
+                            colorPrimary: '#1a1a1a',
+                            colorBackground: '#ffffff',
+                            colorText: '#1a1a1a',
+                            colorDanger: '#d32f2f',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                            spacingUnit: '2px',
+                            borderRadius: '6px',
+                            fontSize: '16px',
+                        },
+                    }
+                });
+                
+                paymentElement = elements.create('payment');
+                paymentElement.mount('#payment-element');
+                
+                // Enable submit button once elements are ready
+                const submitButton = document.getElementById('submit');
+                if (stripe && elements && paymentElement) {
+                    submitButton.disabled = false;
                 }
-            });
-            
-            const paymentElement = elements.create('payment');
-            paymentElement.mount('#payment-element');
-            
-            return { elements, paymentElement };
+                
+                console.log("Stripe setup completed successfully");
+                console.log("stripe:", stripe);
+                console.log("elements:", elements);
+                console.log("paymentElement:", paymentElement);
+                
+            } catch (error) {
+                console.error("Error setting up Stripe:", error);
+                const errorMessage = document.getElementById('error-message');
+                const errorDiv = document.getElementById('error');
+                errorMessage.textContent = 'Failed to initialize payment system. Please refresh the page and try again.';
+                errorDiv.style.display = 'block';
+            }
         }
         
         // Handle payment submission
@@ -211,7 +235,16 @@
             error.style.display = 'none';
             
             try {
-                const { elements } = await setupStripe();
+                // Log elements status before payment
+                console.log("Before payment confirmation:");
+                console.log("stripe:", stripe);
+                console.log("elements:", elements);
+                console.log("paymentElement:", paymentElement);
+                
+                // Hard guard: ensure all elements are ready
+                if (!stripe || !elements || !paymentElement) {
+                    throw new Error('Payment system not fully initialized. Please refresh the page.');
+                }
                 
                 const { error: stripeError } = await stripe.confirmPayment({
                     elements,
@@ -236,6 +269,7 @@
                 errorMessage.textContent = err.message || 'An error occurred during payment';
                 submitButton.disabled = false;
                 submitButton.textContent = 'Pay Now';
+                console.error("Payment error:", err);
             }
         }
         
