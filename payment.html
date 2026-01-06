@@ -173,9 +173,20 @@
         
         // Create payment intent (server-side in production)
         async function createPaymentIntent() {
+            const response = await fetch('https://api.clearlease.org/create-payment-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to create payment intent');
+            }
+            
+            const data = await response.json();
             return {
-                clientSecret: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34_secret_8f7d6e5r4t3y2u1i0o9p8o7i6u5y4t3',
-                id: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34'
+                clientSecret: data.client_secret
             };
         }
         
@@ -186,7 +197,7 @@
                 const { clientSecret } = await createPaymentIntent();
                 
                 // Initialize Stripe
-                stripe = Stripe('pk_test_your_publishable_key_here');
+                stripe = Stripe('pk_test_51LZpS02eZvKYlo2CN03V4FpCoxz1e7cYj3b0q9vzD6v8q8q8q8q8q8q8q8q8q8q8q8q8q8q8');
                 
                 // Create Elements instance
                 elements = stripe.elements({
