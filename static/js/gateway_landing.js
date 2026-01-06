@@ -55,9 +55,13 @@ emailInput.addEventListener('keydown', (e) => {
 supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN') {
         updateUserInfo(session.user);
+        // Hide login button when signed in
+        explicitLoginButton.style.display = 'none';
         checkUserStatus();
     } else if (event === 'SIGNED_OUT') {
         clearUserInfo();
+        // Show login button when signed out
+        explicitLoginButton.style.display = 'block';
         checkUserStatus();
     }
 });
@@ -68,6 +72,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (user) {
         updateUserInfo(user);
+        // Hide login button when signed in
+        explicitLoginButton.style.display = 'none';
+    } else {
+        // Show login button when signed out
+        explicitLoginButton.style.display = 'block';
     }
     checkUserStatus();
 });
@@ -220,7 +229,7 @@ function showUpgradeCTA() {
     upgradeCTA.className = 'upgrade-cta';
     upgradeCTA.innerHTML = `
         <h3>Upgrade to Unlock All Features</h3>
-        <p>Get unlimited analyses, detailed explanations, and more with a paid plan.</p>
+        <p>Get unlimited analyses, detailed explanations, and more with a paid plan for just $7.99.</p>
         <button class="upgrade-button">Upgrade Now</button>
     `;
     
