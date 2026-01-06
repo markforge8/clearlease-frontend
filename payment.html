@@ -42,7 +42,14 @@
         
         .stripe-container {
             margin: 3rem 0;
-            min-height: 100px;
+            min-height: 200px;
+        }
+        
+        #payment-element {
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
         }
         
         .payment-button {
@@ -115,6 +122,10 @@
             .payment-amount {
                 font-size: 1.75rem;
             }
+            
+            .stripe-container {
+                min-height: 150px;
+            }
         }
     </style>
 </head>
@@ -128,7 +139,7 @@
             </div>
             
             <div class="stripe-container">
-                <!-- Stripe Elements will be inserted here -->
+                <!-- Stripe Payment Element will be mounted here -->
                 <div id="payment-element"></div>
             </div>
             
@@ -155,28 +166,29 @@
     </main>
 
     <script>
-        // Initialize Stripe
+        // Global variables
         let stripe = null;
         let elements = null;
         let paymentElement = null;
         
-        // Create payment intent (this should be done server-side in production)
+        // Create payment intent (server-side in production)
         async function createPaymentIntent() {
-            // In production, this should call your backend API
             return {
                 clientSecret: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34_secret_8f7d6e5r4t3y2u1i0o9p8o7i6u5y4t3',
                 id: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34'
             };
         }
         
-        // Setup Stripe Elements
-        async function setupStripe() {
+        // Initialize Stripe and Elements
+        async function initializeStripe() {
             try {
+                // Create payment intent first
+                const { clientSecret } = await createPaymentIntent();
+                
                 // Initialize Stripe
                 stripe = Stripe('pk_test_your_publishable_key_here');
                 
-                const { clientSecret } = await createPaymentIntent();
-                
+                // Create Elements instance
                 elements = stripe.elements({
                     clientSecret: clientSecret,
                     appearance: {
@@ -194,22 +206,37 @@
                     }
                 });
                 
+                // Create and mount Payment Element
                 paymentElement = elements.create('payment');
                 paymentElement.mount('#payment-element');
                 
-                // Enable submit button once elements are ready
+                // Enable submit button once all components are ready
                 const submitButton = document.getElementById('submit');
-                if (stripe && elements && paymentElement) {
-                    submitButton.disabled = false;
+                const paymentElementDiv = document.getElementById('payment-element');
+                
+                // Verify Payment Element is properly mounted
+                if (stripe && elements && paymentElement && paymentElementDiv) {
+                    // Check if Payment Element has been rendered
+                    setTimeout(() => {
+                        if (paymentElementDiv.children.length > 0) {
+                            submitButton.disabled = false;
+                            console.log("Stripe initialized successfully");
+                            console.log("stripe:", stripe);
+                            console.log("elements:", elements);
+                            console.log("paymentElement:", paymentElement);
+                            console.log("Payment Element rendered:", paymentElementDiv.children.length > 0);
+                        } else {
+                            console.error("Payment Element failed to render");
+                            const errorMessage = document.getElementById('error-message');
+                            const errorDiv = document.getElementById('error');
+                            errorMessage.textContent = 'Payment form failed to load. Please refresh the page and try again.';
+                            errorDiv.style.display = 'block';
+                        }
+                    }, 1000);
                 }
                 
-                console.log("Stripe setup completed successfully");
-                console.log("stripe:", stripe);
-                console.log("elements:", elements);
-                console.log("paymentElement:", paymentElement);
-                
             } catch (error) {
-                console.error("Error setting up Stripe:", error);
+                console.error("Error initializing Stripe:", error);
                 const errorMessage = document.getElementById('error-message');
                 const errorDiv = document.getElementById('error');
                 errorMessage.textContent = 'Failed to initialize payment system. Please refresh the page and try again.';
@@ -235,17 +262,26 @@
             error.style.display = 'none';
             
             try {
-                // Log elements status before payment
+                // Verify all components are ready
                 console.log("Before payment confirmation:");
                 console.log("stripe:", stripe);
                 console.log("elements:", elements);
                 console.log("paymentElement:", paymentElement);
                 
-                // Hard guard: ensure all elements are ready
+                // Critical check: ensure Payment Element exists
                 if (!stripe || !elements || !paymentElement) {
                     throw new Error('Payment system not fully initialized. Please refresh the page.');
                 }
                 
+                // Verify Payment Element is properly rendered
+                const paymentElementDiv = document.getElementById('payment-element');
+                if (!paymentElementDiv || paymentElementDiv.children.length === 0) {
+                    throw new Error('Payment form not properly rendered. Please refresh the page.');
+                }
+                
+                console.log("Payment Element DOM check:", paymentElementDiv.children.length > 0);
+                
+                // Confirm payment with Stripe
                 const { error: stripeError } = await stripe.confirmPayment({
                     elements,
                     confirmParams: {
@@ -276,8 +312,8 @@
         // Setup event listener
         document.getElementById('submit').addEventListener('click', handleSubmit);
         
-        // Initialize on page load
-        setupStripe();
+        // Initialize Stripe on page load
+        initializeStripe();
     </script>
 </body>
 </html>
