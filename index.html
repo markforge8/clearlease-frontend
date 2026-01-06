@@ -23,7 +23,7 @@
                     placeholder="Paste your lease agreement text here..."
                     rows="12"
                 ></textarea>
-                <button id="analyzeButton" class="analyze-button" onclick="window.location.href='/templates/explain_v2_content.html'">Analyze My Lease</button>
+                <button id="analyzeButton" class="analyze-button">Analyze My Lease</button>
             </section>
 
             <!-- Results Section -->
@@ -33,6 +33,9 @@
                     <div id="overview" class="overview"></div>
                 </div>
                 <div id="riskItems" class="risk-items"></div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="analyze-button" onclick="window.location.href='/templates/explain_v2_content.html'">Why is this risky?</button>
+                </div>
             </section>
 
             <!-- Loading State -->
