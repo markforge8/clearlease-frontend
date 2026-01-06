@@ -5,15 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClearLease - Contract Risk Analysis</title>
     <link rel="stylesheet" href="/static/css/gateway_landing.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .login-section {
+            background-color: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .login-form {
+            margin: 1.5rem 0;
+        }
+        
+        .email-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        
+        .login-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .login-button:hover {
+            background-color: #0069d9;
+        }
+        
+        .login-message {
+            margin-top: 1rem;
+            color: #666;
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            text-align: right;
+        }
+        
+        .user-email {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .logout-button {
+            background-color: transparent;
+            border: 1px solid #ddd;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        
+        .logout-button:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .upgrade-cta {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .upgrade-button {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        
+        .upgrade-button:hover {
+            background-color: #e0a800;
+        }
+    </style>
 </head>
 <body>
     <main class="container">
         <div class="content">
+            <!-- User Info Section -->
+            <div id="userInfo" class="user-info" style="display: none;">
+                <div class="user-email" id="userEmail"></div>
+                <button id="logoutButton" class="logout-button">Logout</button>
+            </div>
+
             <!-- Header Section -->
             <header class="header">
                 <h1 class="headline">Identify risky clauses in your rental agreement</h1>
                 <p class="subtitle">ClearLease helps you quickly spot potential issues like auto-renewal terms, early termination penalties, and vague obligations.</p>
             </header>
+
+            <!-- Login Section -->
+            <section id="loginSection" class="login-section" style="display: none;">
+                <h2>Login to Save Your Analysis</h2>
+                <p>We'll send you a magic link to your email - no password needed!</p>
+                <div class="login-form">
+                    <input 
+                        type="email" 
+                        id="emailInput" 
+                        class="email-input" 
+                        placeholder="Enter your email address"
+                    >
+                    <button id="loginButton" class="login-button">Send Magic Link</button>
+                </div>
+                <p id="loginMessage" class="login-message"></p>
+            </section>
 
             <!-- Input Section -->
             <section class="input-section">

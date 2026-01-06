@@ -2,6 +2,12 @@
 // Handles API communication and UI updates
 
 const API_ENDPOINT = 'https://api.clearlease.org/analyze';
+const API_ME_ENDPOINT = 'https://api.clearlease.org/api/me';
+
+// Supabase initialization
+const supabaseUrl = 'https://your-project-id.supabase.co';
+const supabaseAnonKey = 'your-anon-key';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // DOM Elements
 const leaseTextarea = document.getElementById('leaseText');
@@ -13,8 +19,19 @@ const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const errorMessage = document.getElementById('errorMessage');
 
+// Login Elements
+const loginSection = document.getElementById('loginSection');
+const emailInput = document.getElementById('emailInput');
+const loginButton = document.getElementById('loginButton');
+const loginMessage = document.getElementById('loginMessage');
+const userInfo = document.getElementById('userInfo');
+const userEmail = document.getElementById('userEmail');
+const logoutButton = document.getElementById('logoutButton');
+
 // Event Listeners
 analyzeButton.addEventListener('click', handleAnalyze);
+loginButton.addEventListener('click', handleLogin);
+logoutButton.addEventListener('click', handleLogout);
 
 // Handle Enter key in textarea (Ctrl+Enter or Cmd+Enter)
 leaseTextarea.addEventListener('keydown', (e) => {
@@ -22,6 +39,243 @@ leaseTextarea.addEventListener('keydown', (e) => {
         handleAnalyze();
     }
 });
+
+// Handle Enter key in email input
+emailInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        handleLogin();
+    }
+});
+
+// Check for auth changes
+supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') {
+        updateUserInfo(session.user);
+        checkUserStatus();
+    } else if (event === 'SIGNED_OUT') {
+        clearUserInfo();
+        checkUserStatus();
+    }
+});
+
+// Initialize app
+window.addEventListener('DOMContentLoaded', async () => {
+    // Check if user is already logged in
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (user) {
+        updateUserInfo(user);
+    }
+    checkUserStatus();
+});
+
+/**
+ * Handle login with email magic link
+ */
+async function handleLogin() {
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        loginMessage.textContent = 'Please enter your email address';
+        return;
+    }
+    
+    loginButton.disabled = true;
+    loginMessage.textContent = 'Sending magic link...';
+    
+    try {
+        const { error } = await supabaseClient.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo: window.location.href
+            }
+        });
+        
+        if (error) {
+            throw error;
+        }
+        
+        loginMessage.textContent = 'Magic link sent! Check your email to log in.';
+    } catch (error) {
+        console.error('Login error:', error);
+        loginMessage.textContent = `Error sending magic link: ${error.message}`;
+    } finally {
+        loginButton.disabled = false;
+    }
+}
+
+/**
+ * Handle logout
+ */
+async function handleLogout() {
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+            throw error;
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+/**
+ * Update user info display
+ */
+function updateUserInfo(user) {
+    if (user) {
+        userEmail.textContent = user.email;
+        userInfo.style.display = 'block';
+        loginSection.style.display = 'none';
+    } else {
+        clearUserInfo();
+    }
+}
+
+/**
+ * Clear user info display
+ */
+function clearUserInfo() {
+    userEmail.textContent = '';
+    userInfo.style.display = 'none';
+}
+
+/**
+ * Check user status and update UI accordingly
+ */
+async function checkUserStatus() {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+        // User is not logged in, show free version
+        await showFreeVersion();
+        return;
+    }
+    
+    // User is logged in, get paid status from API
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error || !data.session) {
+            throw error;
+        }
+        
+        const session = data.session;
+        
+        const response = await fetch(API_ME_ENDPOINT, {
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const userData = await response.json();
+        const paid = userData.paid || false;
+        
+        if (paid) {
+            // User is paid, unlock all features
+            unlockAllFeatures();
+        } else {
+            // User is logged in but not paid, show free version with upgrade CTA
+            await showFreeVersion();
+            showUpgradeCTA();
+        }
+    } catch (error) {
+        console.error('Error checking user status:', error);
+        // Fallback to free version if API call fails
+        await showFreeVersion();
+    }
+}
+
+/**
+ * Show free version of the app
+ */
+async function showFreeVersion() {
+    // Check if user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // For free version, show login prompt if user is not logged in
+    if (!user) {
+        // Check if login prompt already exists
+        if (!document.getElementById('loginPrompt')) {
+            // Add login prompt to the input section
+            const inputSection = document.querySelector('.input-section');
+            if (inputSection) {
+                const loginPrompt = document.createElement('div');
+                loginPrompt.id = 'loginPrompt';
+                loginPrompt.className = 'upgrade-cta';
+                loginPrompt.innerHTML = `
+                    <h3>Login to Save Your Analysis</h3>
+                    <p>Login with your email to save your analysis results and unlock additional features.</p>
+                    <button id="showLoginButton" class="upgrade-button">Login Now</button>
+                `;
+                
+                // Add event listener to show login button
+                loginPrompt.querySelector('#showLoginButton').addEventListener('click', () => {
+                    loginSection.style.display = 'block';
+                    loginPrompt.style.display = 'none';
+                });
+                
+                // Insert before analyze button
+                const analyzeButton = inputSection.querySelector('#analyzeButton');
+                if (analyzeButton) {
+                    inputSection.insertBefore(loginPrompt, analyzeButton);
+                }
+            }
+        }
+    } else {
+        // Remove login prompt if user is logged in
+        const loginPrompt = document.getElementById('loginPrompt');
+        if (loginPrompt) {
+            loginPrompt.remove();
+        }
+    }
+}
+
+/**
+ * Show upgrade CTA for free users
+ */
+function showUpgradeCTA() {
+    // Check if upgrade CTA already exists
+    if (document.getElementById('upgradeCTA')) {
+        return;
+    }
+    
+    // Add upgrade CTA to the results section
+    const upgradeCTA = document.createElement('div');
+    upgradeCTA.id = 'upgradeCTA';
+    upgradeCTA.className = 'upgrade-cta';
+    upgradeCTA.innerHTML = `
+        <h3>Upgrade to Unlock All Features</h3>
+        <p>Get unlimited analyses, detailed explanations, and more with a paid plan.</p>
+        <button class="upgrade-button">Upgrade Now</button>
+    `;
+    
+    // Add event listener to upgrade button
+    upgradeCTA.querySelector('.upgrade-button').addEventListener('click', () => {
+        // Redirect to payment page or show payment options
+        window.location.href = '/payment.html';
+    });
+    
+    // Insert before results section
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+        resultsSection.parentNode.insertBefore(upgradeCTA, resultsSection);
+    }
+}
+
+/**
+ * Unlock all features for paid users
+ */
+function unlockAllFeatures() {
+    // Remove upgrade CTA if it exists
+    const upgradeCTA = document.getElementById('upgradeCTA');
+    if (upgradeCTA) {
+        upgradeCTA.remove();
+    }
+    
+    // No need to show any payment prompts for paid users
+}
 
 /**
  * Main analysis handler
