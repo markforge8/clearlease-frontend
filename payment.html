@@ -214,26 +214,36 @@
                 const submitButton = document.getElementById('submit');
                 const paymentElementDiv = document.getElementById('payment-element');
                 
-                // Verify Payment Element is properly mounted
-                if (stripe && elements && paymentElement && paymentElementDiv) {
-                    // Check if Payment Element has been rendered
-                    setTimeout(() => {
-                        if (paymentElementDiv.children.length > 0) {
-                            submitButton.disabled = false;
-                            console.log("Stripe initialized successfully");
-                            console.log("stripe:", stripe);
-                            console.log("elements:", elements);
-                            console.log("paymentElement:", paymentElement);
-                            console.log("Payment Element rendered:", paymentElementDiv.children.length > 0);
-                        } else {
-                            console.error("Payment Element failed to render");
-                            const errorMessage = document.getElementById('error-message');
-                            const errorDiv = document.getElementById('error');
-                            errorMessage.textContent = 'Payment form failed to load. Please refresh the page and try again.';
-                            errorDiv.style.display = 'block';
-                        }
-                    }, 1000);
-                }
+                console.log("Initialization status before mount check:");
+                console.log("stripe exists:", !!stripe);
+                console.log("elements exists:", !!elements);
+                console.log("paymentElement exists:", !!paymentElement);
+                console.log("paymentElementDiv exists:", !!paymentElementDiv);
+                
+                // Wait for Payment Element to mount
+                const checkMountStatus = setInterval(() => {
+                    if (paymentElementDiv && paymentElementDiv.children.length > 0) {
+                        clearInterval(checkMountStatus);
+                        submitButton.disabled = false;
+                        console.log("✅ Payment Element mounted successfully!");
+                        console.log("✅ Enabling Pay Now button");
+                        console.log("Payment Element children count:", paymentElementDiv.children.length);
+                    } else {
+                        console.log("⏳ Waiting for Payment Element to mount...");
+                    }
+                }, 200);
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    clearInterval(checkMountStatus);
+                    if (submitButton.disabled) {
+                        console.error("❌ Payment Element failed to mount within timeout");
+                        const errorMessage = document.getElementById('error-message');
+                        const errorDiv = document.getElementById('error');
+                        errorMessage.textContent = 'Payment form failed to load. Please refresh the page and try again.';
+                        errorDiv.style.display = 'block';
+                    }
+                }, 5000);
                 
             } catch (error) {
                 console.error("Error initializing Stripe:", error);
@@ -249,6 +259,15 @@
             e.preventDefault();
             
             const submitButton = document.getElementById('submit');
+            
+            // Check if button is disabled (should never happen)
+            if (submitButton.disabled) {
+                console.error("❌ Pay Now button is disabled - cannot submit payment");
+                return;
+            }
+            
+            console.log("✅ Pay Now button clicked - button is enabled");
+            
             const loading = document.getElementById('loading');
             const success = document.getElementById('success');
             const error = document.getElementById('error');
@@ -262,24 +281,22 @@
             error.style.display = 'none';
             
             try {
-                // Verify all components are ready
-                console.log("Before payment confirmation:");
+                console.log("=== Before confirmPayment() ===");
                 console.log("stripe:", stripe);
                 console.log("elements:", elements);
                 console.log("paymentElement:", paymentElement);
                 
-                // Critical check: ensure Payment Element exists
-                if (!stripe || !elements || !paymentElement) {
-                    throw new Error('Payment system not fully initialized. Please refresh the page.');
-                }
-                
-                // Verify Payment Element is properly rendered
+                // Verify Payment Element is mounted
                 const paymentElementDiv = document.getElementById('payment-element');
+                console.log("Payment Element DOM exists:", !!paymentElementDiv);
+                console.log("Payment Element children count:", paymentElementDiv ? paymentElementDiv.children.length : 0);
+                
                 if (!paymentElementDiv || paymentElementDiv.children.length === 0) {
                     throw new Error('Payment form not properly rendered. Please refresh the page.');
                 }
                 
-                console.log("Payment Element DOM check:", paymentElementDiv.children.length > 0);
+                console.log("✅ Payment Element is mounted and rendered");
+                console.log("=== Calling confirmPayment() ===");
                 
                 // Confirm payment with Stripe
                 const { error: stripeError } = await stripe.confirmPayment({
@@ -293,6 +310,8 @@
                     throw stripeError;
                 }
                 
+                console.log("✅ Payment successful!");
+                
                 // Payment successful
                 loading.style.display = 'none';
                 success.style.display = 'block';
@@ -300,19 +319,24 @@
                 
             } catch (err) {
                 // Payment failed
+                console.error("❌ Payment error:", err);
                 loading.style.display = 'none';
                 error.style.display = 'block';
                 errorMessage.textContent = err.message || 'An error occurred during payment';
                 submitButton.disabled = false;
                 submitButton.textContent = 'Pay Now';
-                console.error("Payment error:", err);
             }
         }
         
         // Setup event listener
-        document.getElementById('submit').addEventListener('click', handleSubmit);
+        const submitButton = document.getElementById('submit');
+        submitButton.addEventListener('click', handleSubmit);
+        
+        console.log("=== Page loaded ===");
+        console.log("Initial button state:", submitButton.disabled ? "disabled" : "enabled");
         
         // Initialize Stripe on page load
+        console.log("=== Initializing Stripe ===");
         initializeStripe();
     </script>
 </body>
