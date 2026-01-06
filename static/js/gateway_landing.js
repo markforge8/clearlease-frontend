@@ -5,8 +5,8 @@ const API_ENDPOINT = 'https://api.clearlease.org/analyze';
 const API_ME_ENDPOINT = 'https://api.clearlease.org/api/me';
 
 // Supabase initialization
-const supabaseUrl = 'https://your-project-id.supabase.co';
-const supabaseAnonKey = 'your-anon-key';
+const supabaseUrl = 'https://usbtgcbbupxccmooiugj.supabase.co';
+const supabaseAnonKey = 'sb_publishable_ocY4DaGxx1os-wDlruQxsw_HX-eEHWC';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
 // DOM Elements
@@ -198,41 +198,10 @@ async function showFreeVersion() {
     // Check if user is logged in
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // For free version, show login prompt if user is not logged in
-    if (!user) {
-        // Check if login prompt already exists
-        if (!document.getElementById('loginPrompt')) {
-            // Add login prompt to the input section
-            const inputSection = document.querySelector('.input-section');
-            if (inputSection) {
-                const loginPrompt = document.createElement('div');
-                loginPrompt.id = 'loginPrompt';
-                loginPrompt.className = 'upgrade-cta';
-                loginPrompt.innerHTML = `
-                    <h3>Login to Save Your Analysis</h3>
-                    <p>Login with your email to save your analysis results and unlock additional features.</p>
-                    <button id="showLoginButton" class="upgrade-button">Login Now</button>
-                `;
-                
-                // Add event listener to show login button
-                loginPrompt.querySelector('#showLoginButton').addEventListener('click', () => {
-                    loginSection.style.display = 'block';
-                    loginPrompt.style.display = 'none';
-                });
-                
-                // Insert before analyze button
-                const analyzeButton = inputSection.querySelector('#analyzeButton');
-                if (analyzeButton) {
-                    inputSection.insertBefore(loginPrompt, analyzeButton);
-                }
-            }
-        }
-    } else {
-        // Remove login prompt if user is logged in
-        const loginPrompt = document.getElementById('loginPrompt');
-        if (loginPrompt) {
-            loginPrompt.remove();
-        }
+    // Remove any existing login prompt
+    const loginPrompt = document.getElementById('loginPrompt');
+    if (loginPrompt) {
+        loginPrompt.remove();
     }
 }
 
@@ -295,16 +264,6 @@ async function handleAnalyze() {
 
     if (leaseText.length < 50) {
         showError('Please provide a longer lease agreement text (at least 50 characters).');
-        return;
-    }
-
-    // Check if user is logged in
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    
-    if (!user) {
-        // User is not logged in, show login section
-        loginSection.style.display = 'block';
-        showError('Please login first to analyze your lease agreement.');
         return;
     }
 
