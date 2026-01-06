@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClearLease</title>
+    <link rel="stylesheet" href="/static/css/explain_v2_content.css">
+</head>
+<body>
+    <main class="content-container">
+        <!-- Phase 1: Auto-show escape_window -->
+        <section class="content-item visible" data-item="escape_window">
+            <div class="content-block">
+                <p class="content-text" id="escape_window_text"></p>
+            </div>
+        </section>
+
+        <!-- Pacing brake: Show next button -->
+        <section class="pacing-brake" id="pacing_brake">
+            <button class="show-next-button" id="show_next_btn">Show next</button>
+        </section>
+
+        <!-- Phase 2: Headline (revealed on button click) -->
+        <section class="content-item hidden" data-item="headline">
+            <div class="content-block">
+                <h2 class="content-headline" id="headline_text"></h2>
+            </div>
+        </section>
+
+        <!-- Progressive items: core_logic -->
+        <section class="content-item hidden" data-item="core_logic">
+            <div class="content-block">
+                <p class="content-text" id="core_logic_text"></p>
+            </div>
+        </section>
+
+        <!-- Progressive items: user_actions -->
+        <section class="content-item hidden" data-item="user_actions">
+            <div class="content-block">
+                <ul class="actions-list" id="user_actions_list"></ul>
+            </div>
+        </section>
+
+        <!-- Re-centering line (inserted after 2-3 items) -->
+        <section class="content-item hidden" data-item="recentering">
+            <div class="content-block recentering-block">
+                <p class="recentering-text">This doesn't mean the contract is unfair overall.</p>
+            </div>
+        </section>
+
+        <!-- Action Translation panel -->
+        <section class="content-item hidden" data-item="action_translation">
+            <div class="content-block action-translation-block">
+                <p class="action-translation-text">This usually matters only in specific situations.</p>
+                <p class="action-translation-text">For now, nothing needs to be done.</p>
+                <p class="action-translation-text">If you ever want to revisit it, this is the section to look at.</p>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Inject Explain v2 data from backend Gateway output -->
+    <!-- Static JavaScript - data can be injected via URL params or will use defaults -->
+    <script>
+        // Inject Explain v2 data (static version for static deployment)
+        // Data can be passed via URL parameters or will fall back to defaults in explain_v2_content.js
+        window.explainV2Data = {
+            escape_window: {
+                conditions: null
+            },
+            headline: null,
+            core_logic: null,
+            user_actions: []
+        };
+    </script>
+    <script src="/static/js/explain_v2_content.js"></script>
+</body>
+</html>
+
