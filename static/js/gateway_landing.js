@@ -184,27 +184,56 @@ function displayOverview(overview) {
 function displayRiskItems(riskItems) {
     if (riskItems.length === 0) {
         showNoRisksFound();
-        return;
+    } else {
+        riskItemsContainer.innerHTML = riskItems.map(item => {
+            const severityClass = normalizeSeverity(item.severity);
+            const severityLabel = severityClass.charAt(0).toUpperCase() + severityClass.slice(1);
+
+            return `
+                <div class="risk-item severity-${severityClass}">
+                    <div class="risk-item-header">
+                        <div class="risk-item-title">${escapeHtml(item.title)}</div>
+                        <div class="risk-item-severity ${severityClass}">Initial: ${severityLabel}</div>
+                    </div>
+                    <div class="risk-item-message">${escapeHtml(item.message)}</div>
+                    ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
+                    <div class="risk-item-cta" style="margin-top: 15px;">
+                        <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Learn more</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
+    
+    // Add handoff section
+    addHandoffSection();
+}
 
-    riskItemsContainer.innerHTML = riskItems.map(item => {
-        const severityClass = normalizeSeverity(item.severity);
-        const severityLabel = severityClass.charAt(0).toUpperCase() + severityClass.slice(1);
-
-        return `
-            <div class="risk-item severity-${severityClass}">
-                <div class="risk-item-header">
-                    <div class="risk-item-title">${escapeHtml(item.title)}</div>
-                    <div class="risk-item-severity ${severityClass}">${severityLabel}</div>
-                </div>
-                <div class="risk-item-message">${escapeHtml(item.message)}</div>
-                ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
-                <div class="risk-item-cta" style="margin-top: 15px;">
-                    <button class="learn-more-btn" onclick="window.open('/templates/explain_v2_content.html?risk_type=${item.risk_code || 'general'}', '_blank')">Learn more</button>
-                </div>
-            </div>
-        `;
-    }).join('');
+/**
+ * Add handoff section after results
+ */
+function addHandoffSection() {
+    const handoffHtml = `
+        <div class="handoff-section" style="margin-top: 3rem; padding: 2rem; background-color: #f8f8f8; border-radius: 8px; text-align: center;">
+            <h3 style="font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin-bottom: 1rem;">Want a more comprehensive analysis?</h3>
+            <p style="font-size: 1rem; color: #666666; margin-bottom: 2rem; line-height: 1.5;">
+                This initial scan provides basic insights. For detailed risk assessment and personalized next steps, unlock our comprehensive risk guide.
+            </p>
+            <button class="analyze-button" onclick="window.location.href='/templates/explain_v2_handoff.html'" style="width: auto; display: inline-block;">
+                Unlock Next-Step Risk Guide
+            </button>
+        </div>
+    `;
+    
+    // Create handoff container if it doesn't exist
+    let handoffContainer = document.getElementById('handoffContainer');
+    if (!handoffContainer) {
+        handoffContainer = document.createElement('div');
+        handoffContainer.id = 'handoffContainer';
+        resultsSection.appendChild(handoffContainer);
+    }
+    
+    handoffContainer.innerHTML = handoffHtml;
 }
 
 /**
@@ -214,7 +243,7 @@ function showNoRisksFound() {
     riskItemsContainer.innerHTML = `
         <div class="risk-item">
             <div class="risk-item-message" style="text-align: center; color: #666666; padding: 2rem;">
-                No significant risk items were identified in your lease agreement.
+                Initial scan completed. No significant risk items identified in basic review.
             </div>
         </div>
     `;
