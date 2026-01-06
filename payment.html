@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlock Next-Step Risk Guide | ClearLease</title>
+    <link rel="stylesheet" href="/static/css/gateway_landing.css">
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .payment-header {
+            margin-bottom: 3rem;
+        }
+        
+        .payment-title {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        
+        .payment-subtitle {
+            font-size: 1.125rem;
+            color: #666666;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        .payment-amount {
+            font-size: 2rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin: 2rem 0;
+        }
+        
+        .stripe-container {
+            margin: 3rem 0;
+        }
+        
+        .payment-button {
+            width: 100%;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 500;
+            font-family: inherit;
+            color: #ffffff;
+            background-color: #1a1a1a;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 2rem;
+        }
+        
+        .payment-button:hover {
+            background-color: #333333;
+        }
+        
+        .payment-button:active {
+            background-color: #000000;
+        }
+        
+        .payment-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .loading-indicator {
+            display: none;
+            margin: 2rem 0;
+            color: #666666;
+        }
+        
+        .success-message {
+            display: none;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 6px;
+            color: #2e7d32;
+        }
+        
+        .error-message {
+            display: none;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 6px;
+            color: #c62828;
+        }
+        
+        @media (max-width: 640px) {
+            .payment-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .payment-title {
+                font-size: 1.5rem;
+            }
+            
+            .payment-subtitle {
+                font-size: 1rem;
+            }
+            
+            .payment-amount {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h1 class="payment-title">Unlock Next-Step Risk Guide</h1>
+                <p class="payment-subtitle">Get personalized guidance for your specific lease situation</p>
+                <div class="payment-amount">$29.99</div>
+            </div>
+            
+            <div class="stripe-container">
+                <!-- Stripe Elements will be inserted here -->
+                <div id="payment-element"></div>
+            </div>
+            
+            <button id="submit" class="payment-button">
+                Pay Now
+            </button>
+            
+            <div id="loading" class="loading-indicator">
+                Processing payment...
+            </div>
+            
+            <div id="success" class="success-message">
+                <h3>Payment successful!</h3>
+                <p>Your Next-Step Risk Guide is now available.</p>
+                <button class="payment-button" onclick="window.location.href='/results'">View Risk Guide</button>
+            </div>
+            
+            <div id="error" class="error-message">
+                <h3>Payment failed</h3>
+                <p id="error-message"></p>
+                <button class="payment-button" onclick="window.location.reload()">Try Again</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Stripe
+        const stripe = Stripe('pk_test_your_publishable_key_here');
+        
+        // Create payment intent (this should be done server-side in production)
+        async function createPaymentIntent() {
+            // In production, this should call your backend API
+            return {
+                clientSecret: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34_secret_8f7d6e5r4t3y2u1i0o9p8o7i6u5y4t3',
+                id: 'pi_3LZq4r2eZvKYlo2C0x7X4Y34'
+            };
+        }
+        
+        // Setup Stripe Elements
+        async function setupStripe() {
+            const { clientSecret } = await createPaymentIntent();
+            
+            const elements = stripe.elements({
+                clientSecret: clientSecret,
+                appearance: {
+                    theme: 'stripe',
+                    variables: {
+                        colorPrimary: '#1a1a1a',
+                        colorBackground: '#ffffff',
+                        colorText: '#1a1a1a',
+                        colorDanger: '#d32f2f',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        spacingUnit: '2px',
+                        borderRadius: '6px',
+                        fontSize: '16px',
+                    },
+                }
+            });
+            
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+            
+            return { elements, paymentElement };
+        }
+        
+        // Handle payment submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const submitButton = document.getElementById('submit');
+            const loading = document.getElementById('loading');
+            const success = document.getElementById('success');
+            const error = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+            
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            loading.style.display = 'block';
+            success.style.display = 'none';
+            error.style.display = 'none';
+            
+            try {
+                const { elements } = await setupStripe();
+                
+                const { error: stripeError } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: window.location.origin + '/results',
+                    },
+                });
+                
+                if (stripeError) {
+                    throw stripeError;
+                }
+                
+                // Payment successful
+                loading.style.display = 'none';
+                success.style.display = 'block';
+                submitButton.style.display = 'none';
+                
+            } catch (err) {
+                // Payment failed
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                errorMessage.textContent = err.message || 'An error occurred during payment';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Pay Now';
+            }
+        }
+        
+        // Setup event listener
+        document.getElementById('submit').addEventListener('click', handleSubmit);
+        
+        // Initialize on page load
+        setupStripe();
+    </script>
+</body>
+</html>
