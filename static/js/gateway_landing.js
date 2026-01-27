@@ -1,8 +1,10 @@
 // ClearLease MVP - Frontend JavaScript
 // Handles API communication and UI updates
 
-const API_ENDPOINT = 'https://clearlease-production.up.railway.app/analyze';
-const API_ME_ENDPOINT = 'https://clearlease-production.up.railway.app/api/me';
+// API Configuration
+const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
+const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
+const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/me`;
 
 // Supabase initialization
 const supabaseUrl = 'https://usbtgcbbupxccmooiugj.supabase.co';
@@ -178,10 +180,17 @@ async function checkUserStatus() {
     try {
         const { data, error } = await supabaseClient.auth.getSession();
         if (error || !data.session) {
+            console.error('Session error:', error);
             throw error;
         }
         
+        console.log('Session data:', data.session);
+        console.log('Access token:', data.session.access_token ? 'Token present' : 'Token missing');
+        
         const session = data.session;
+        
+        console.log('Calling API:', API_ME_ENDPOINT);
+        console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
         
         const response = await fetch(API_ME_ENDPOINT, {
             headers: {
@@ -189,8 +198,13 @@ async function checkUserStatus() {
             }
         });
         
+        console.log('API response status:', response.status);
+        console.log('API response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('API error response:', errorText);
+            throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
         
         const userData = await response.json();
@@ -304,10 +318,17 @@ async function handleAnalyze() {
     try {
         const { data, error } = await supabaseClient.auth.getSession();
         if (error || !data.session) {
+            console.error('Session error:', error);
             throw error;
         }
         
+        console.log('Session data:', data.session);
+        console.log('Access token:', data.session.access_token ? 'Token present' : 'Token missing');
+        
         const session = data.session;
+        
+        console.log('Calling API:', API_ME_ENDPOINT);
+        console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
         
         const response = await fetch(API_ME_ENDPOINT, {
             headers: {
@@ -315,8 +336,13 @@ async function handleAnalyze() {
             }
         });
         
+        console.log('API response status:', response.status);
+        console.log('API response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('API error response:', errorText);
+            throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
         }
         
         const userData = await response.json();
