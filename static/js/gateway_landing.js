@@ -1,8 +1,8 @@
 // ClearLease MVP - Frontend JavaScript
 // Handles API communication and UI updates
 
-const API_ENDPOINT = 'https://api.clearlease.org/analyze';
-const API_ME_ENDPOINT = 'https://api.clearlease.org/api/me';
+const API_ENDPOINT = 'https://clearlease-production.up.railway.app/analyze';
+const API_ME_ENDPOINT = 'https://clearlease-production.up.railway.app/api/me';
 
 // Supabase initialization
 const supabaseUrl = 'https://usbtgcbbupxccmooiugj.supabase.co';
@@ -158,12 +158,23 @@ async function checkUserStatus() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     
     if (!user) {
-        // User is not logged in, show free version
+        // State A: Not logged in
+        // Show login button
+        explicitLoginButton.style.display = 'block';
+        // Hide user info
+        userInfo.style.display = 'none';
+        // Show free version
         await showFreeVersion();
         return;
     }
     
-    // User is logged in, get paid status from API
+    // User is logged in
+    // Hide login button
+    explicitLoginButton.style.display = 'none';
+    // Show user info
+    userInfo.style.display = 'block';
+    
+    // Get paid status from API
     try {
         const { data, error } = await supabaseClient.auth.getSession();
         if (error || !data.session) {
@@ -186,10 +197,12 @@ async function checkUserStatus() {
         const paid = userData.paid || false;
         
         if (paid) {
-            // User is paid, unlock all features
+            // State C: Logged in and paid
+            // Unlock all features
             unlockAllFeatures();
         } else {
-            // User is logged in but not paid, show free version with upgrade CTA
+            // State B: Logged in but not paid
+            // Show free version with upgrade CTA
             await showFreeVersion();
             showUpgradeCTA();
         }
@@ -197,6 +210,7 @@ async function checkUserStatus() {
         console.error('Error checking user status:', error);
         // Fallback to free version if API call fails
         await showFreeVersion();
+        showUpgradeCTA();
     }
 }
 
@@ -276,35 +290,80 @@ async function handleAnalyze() {
         return;
     }
 
-    // Reset UI
-    hideAllSections();
-    showLoading();
-    analyzeButton.disabled = true;
-
+    // Check if user is logged in
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    if (!user) {
+        // State A: Not logged in - show login section
+        loginSection.style.display = 'block';
+        showError('Please login first to analyze your lease agreement.');
+        return;
+    }
+    
+    // User is logged in, get paid status
     try {
-        const response = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contract_text: leaseText
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error || !data.session) {
+            throw error;
         }
+        
+        const session = data.session;
+        
+        const response = await fetch(API_ME_ENDPOINT, {
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const userData = await response.json();
+        const paid = userData.paid || false;
+        
+        if (!paid) {
+            // State B: Logged in but not paid - redirect to Gumroad
+            window.location.href = '/payment.html';
+            return;
+        }
+        
+        // State C: Logged in and paid - proceed with analysis
+        // Reset UI
+        hideAllSections();
+        showLoading();
+        analyzeButton.disabled = true;
 
-        const data = await response.json();
-        displayResults(data);
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contract_text: leaseText
+                })
+            });
 
+            if (!response.ok) {
+                throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            displayResults(data);
+
+        } catch (error) {
+            console.error('Analysis error:', error);
+            showError(`Unable to analyze your lease. Please try again later. ${error.message}`);
+        } finally {
+            hideLoading();
+            analyzeButton.disabled = false;
+        }
+        
     } catch (error) {
-        console.error('Analysis error:', error);
-        showError(`Unable to analyze your lease. Please try again later. ${error.message}`);
-    } finally {
-        hideLoading();
-        analyzeButton.disabled = false;
+        console.error('Error checking user status:', error);
+        showError('Please login and upgrade to analyze your lease agreement.');
+        return;
     }
 }
 
