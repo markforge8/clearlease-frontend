@@ -221,18 +221,10 @@
                     console.log('Login successful, saving token and user info');
                     localStorage.setItem('token', data.data.token);
                     
-                    // Force paid status to true
-                    const userWithPaid = {
-                        ...data.data.user,
-                        paid: true
-                    };
-                    localStorage.setItem('user', JSON.stringify(userWithPaid));
+                    // Save user info without modifying paid status
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
                     console.log('Token saved:', data.data.token.substring(0, 20) + '...');
-                    console.log('User saved with paid status:', userWithPaid);
-                    
-                    // Set unlock status
-                    localStorage.setItem('unlocked', 'true');
-                    console.log('Set unlocked status to true');
+                    console.log('User saved:', data.data.user);
                     
                     // Redirect to main page
                     statusMessage.textContent = 'Payment confirmed! Redirecting...';
@@ -292,18 +284,10 @@
                     console.log('Registration successful, saving token and user info');
                     localStorage.setItem('token', data.data.token);
                     
-                    // Force paid status to true
-                    const userWithPaid = {
-                        ...data.data.user,
-                        paid: true
-                    };
-                    localStorage.setItem('user', JSON.stringify(userWithPaid));
+                    // Save user info without modifying paid status
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
                     console.log('Token saved:', data.data.token.substring(0, 20) + '...');
-                    console.log('User saved with paid status:', userWithPaid);
-                    
-                    // Set unlock status
-                    localStorage.setItem('unlocked', 'true');
-                    console.log('Set unlocked status to true');
+                    console.log('User saved:', data.data.user);
                     
                     // Redirect to main page
                     statusMessage.textContent = 'Payment confirmed! Redirecting...';
@@ -358,8 +342,7 @@
                 // Success path - only check HTTP status code
                 console.log('Activate-paid successful');
                 
-                // Set unlock status for confirmation message
-                localStorage.setItem('unlocked', 'true');
+
                 
                 // Redirect back to main page or analysis results
                 statusMessage.textContent = 'Payment confirmed! Redirecting...';
@@ -372,8 +355,6 @@
                 // Even if there's an error, if we got a 200 status, we should proceed
                 // This is a fallback for cases where the response format is unexpected
                 if (error.message === 'Failed to activate paid status') {
-                    // Set unlock status for confirmation message
-                    localStorage.setItem('unlocked', 'true');
                     // Redirect back to main page
                     statusMessage.textContent = 'Payment confirmed! Redirecting...';
                     setTimeout(() => {

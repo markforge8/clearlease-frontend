@@ -64,9 +64,6 @@
             localStorage.setItem('license_token', token);
         }
         
-        // Set unlock status
-        localStorage.setItem('unlocked', 'true');
-        
         // Redirect to main app after 0.8 seconds
         setTimeout(() => {
             window.location.href = 'https://clearlease-frontend.vercel.app/';

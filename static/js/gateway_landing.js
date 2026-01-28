@@ -89,8 +89,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         explicitLoginButton.style.display = 'block';
     }
     
-    // Check if user has just unlocked the app
-    checkUnlockStatus();
+
 });
 
 /**
@@ -126,92 +125,7 @@ async function checkForRecoverableAnalysis() {
     }
 }
 
-/**
- * Check if user has just unlocked the app and show confirmation
- */
-function checkUnlockStatus() {
-    const unlocked = localStorage.getItem('unlocked');
-    if (unlocked) {
-        console.log('Detected unlocked status, refreshing user info');
-        
-        // Show unlock confirmation
-        showUnlockConfirmation();
-        // Clear unlock status
-        localStorage.removeItem('unlocked');
-        
-        // Force a refresh of user info to get the latest paid status
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetchUserInfo().then(userData => {
-                if (userData) {
-                    console.log('Refreshed user info:', userData);
-                    // Update user info in localStorage
-                    localStorage.setItem('user', JSON.stringify(userData));
-                    console.log('Updated user info in localStorage');
-                    // Update UI
-                    updateUserInfo(userData);
-                    console.log('Updated UI with user info');
-                }
-            }).catch(error => {
-                console.error('Error refreshing user info:', error);
-                // Even if refresh fails, assume paid status
-                const user = localStorage.getItem('user');
-                if (user) {
-                    const parsedUser = JSON.parse(user);
-                    parsedUser.paid = true;
-                    localStorage.setItem('user', JSON.stringify(parsedUser));
-                    console.log('Forced paid status to true in localStorage');
-                }
-            });
-        }
-    }
-}
 
-/**
- * Show unlock confirmation message
- */
-function showUnlockConfirmation() {
-    // Create confirmation element
-    const confirmation = document.createElement('div');
-    confirmation.id = 'unlockConfirmation';
-    confirmation.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background-color: #28a745;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease-out;
-    `;
-    
-    // Add animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Set content
-    confirmation.textContent = 'Full analysis unlocked!';
-    
-    // Add to document
-    document.body.appendChild(confirmation);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        confirmation.style.animation = 'slideIn 0.3s ease-out reverse';
-        setTimeout(() => {
-            confirmation.remove();
-            style.remove();
-        }, 300);
-    }, 3000);
-}
 
 /**
  * Handle login
