@@ -78,15 +78,36 @@
 <body>
     <div class="container">
         <h1>Payment received</h1>
-        <p id="statusMessage">Payment successful.</p>
+        <p id="statusMessage">Syncing your payment status...</p>
         <div id="infoMessage" style="margin: 20px 0; color: #666;">
-            <p>Please log in with the email you used for payment to unlock full access.</p>
+            <p>Please wait while we verify your payment. This may take a few seconds.</p>
         </div>
-        <button id="loginRedirectButton" class="login-button">Go to Login Page</button>
+        <div id="syncIndicator" class="loading"></div>
+        <div id="loginSection" style="display: none;">
+            <button id="loginRedirectButton" class="login-button">Go to Login Page</button>
+        </div>
+        <div id="timeoutMessage" style="display: none; margin-top: 20px; color: #666;">
+            <p>Your payment is being processed. Please log in to access your features.</p>
+        </div>
     </div>
     <script>
+        // API Configuration
+        const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
+        const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
+        
         // DOM Elements
+        const statusMessage = document.getElementById('statusMessage');
+        const infoMessage = document.getElementById('infoMessage');
+        const syncIndicator = document.getElementById('syncIndicator');
+        const loginSection = document.getElementById('loginSection');
         const loginRedirectButton = document.getElementById('loginRedirectButton');
+        const timeoutMessage = document.getElementById('timeoutMessage');
+        
+        // Constants
+        const MAX_POLLING_ATTEMPTS = 16; // ~8 seconds with 500ms interval
+        const POLLING_INTERVAL = 500;
+        let pollingAttempts = 0;
+        let pollingInterval;
         
         // Event Listeners
         loginRedirectButton.addEventListener('click', () => {
@@ -96,8 +117,111 @@
         
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
-            // No additional initialization needed
+            // Start payment sync
+            startPaymentSync();
         });
+        
+        /**
+         * Start payment sync process
+         */
+        function startPaymentSync() {
+            console.log('Starting payment sync process');
+            
+            // Get token from localStorage
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                console.log('No token found, showing login button');
+                showLoginButton();
+                return;
+            }
+            
+            // Start polling
+            pollingInterval = setInterval(() => {
+                checkPaymentStatus(token);
+            }, POLLING_INTERVAL);
+            
+            // Initial check
+            checkPaymentStatus(token);
+        }
+        
+        /**
+         * Check payment status by polling /api/auth/me
+         */
+        async function checkPaymentStatus(token) {
+            pollingAttempts++;
+            console.log(`Checking payment status (attempt ${pollingAttempts})`);
+            
+            try {
+                const response = await fetch(API_ME_ENDPOINT, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user info: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Payment status check response:', data);
+                
+                if (data.success && data.data.paid) {
+                    // Payment synced successfully
+                    console.log('Payment synced successfully!');
+                    clearInterval(pollingInterval);
+                    showSyncSuccess();
+                } else if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    // Max attempts reached
+                    console.log('Payment sync timeout');
+                    clearInterval(pollingInterval);
+                    showSyncTimeout();
+                }
+            } catch (error) {
+                console.error('Error checking payment status:', error);
+                
+                if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    // Max attempts reached
+                    clearInterval(pollingInterval);
+                    showSyncTimeout();
+                }
+            }
+        }
+        
+        /**
+         * Show sync success message and redirect
+         */
+        function showSyncSuccess() {
+            statusMessage.textContent = 'Payment synced successfully!';
+            infoMessage.innerHTML = '<p>Your payment has been verified. Redirecting to your dashboard...</p>';
+            syncIndicator.style.display = 'none';
+            
+            // Redirect to main page after a short delay
+            setTimeout(() => {
+                window.location.href = 'https://clearlease-frontend.vercel.app/';
+            }, 1000);
+        }
+        
+        /**
+         * Show sync timeout message
+         */
+        function showSyncTimeout() {
+            statusMessage.textContent = 'Payment processing';
+            infoMessage.innerHTML = '<p>Your payment is being processed. This may take a few minutes.</p>';
+            syncIndicator.style.display = 'none';
+            timeoutMessage.style.display = 'block';
+            loginSection.style.display = 'block';
+        }
+        
+        /**
+         * Show login button
+         */
+        function showLoginButton() {
+            statusMessage.textContent = 'Please login';
+            infoMessage.innerHTML = '<p>Please log in with the email you used for payment to unlock full access.</p>';
+            syncIndicator.style.display = 'none';
+            loginSection.style.display = 'block';
+        }
     </script>
 </body>
 </html>
