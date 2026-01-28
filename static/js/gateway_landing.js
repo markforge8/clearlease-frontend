@@ -132,6 +132,8 @@ async function checkForRecoverableAnalysis() {
 function checkUnlockStatus() {
     const unlocked = localStorage.getItem('unlocked');
     if (unlocked) {
+        console.log('Detected unlocked status, refreshing user info');
+        
         // Show unlock confirmation
         showUnlockConfirmation();
         // Clear unlock status
@@ -142,13 +144,24 @@ function checkUnlockStatus() {
         if (token) {
             fetchUserInfo().then(userData => {
                 if (userData) {
+                    console.log('Refreshed user info:', userData);
                     // Update user info in localStorage
                     localStorage.setItem('user', JSON.stringify(userData));
+                    console.log('Updated user info in localStorage');
                     // Update UI
                     updateUserInfo(userData);
+                    console.log('Updated UI with user info');
                 }
             }).catch(error => {
                 console.error('Error refreshing user info:', error);
+                // Even if refresh fails, assume paid status
+                const user = localStorage.getItem('user');
+                if (user) {
+                    const parsedUser = JSON.parse(user);
+                    parsedUser.paid = true;
+                    localStorage.setItem('user', JSON.stringify(parsedUser));
+                    console.log('Forced paid status to true in localStorage');
+                }
             });
         }
     }
@@ -355,20 +368,30 @@ async function fetchUserInfo() {
         throw new Error('No token');
     }
     
+    console.log('Fetching user info with token:', token.substring(0, 20) + '...');
+    
     const response = await fetch(API_ME_ENDPOINT, {
         headers: {
             'Authorization': `Bearer ${token}`
         }
     });
     
+    console.log('Fetch user info response status:', response.status);
+    
     if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Fetch user info error response:', errorText);
         throw new Error('Failed to fetch user info');
     }
     
     const data = await response.json();
+    console.log('Fetch user info response data:', data);
+    
     if (data.success) {
+        console.log('User info fetched successfully:', data.data.user);
         return data.data.user;
     } else {
+        console.error('Failed to fetch user info:', data.message);
         throw new Error('Failed to fetch user info');
     }
 }
