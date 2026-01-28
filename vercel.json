@@ -1,16 +1,24 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/landing.html"
+      "src": "^/$",
+      "dest": "/landing/index.html"
     },
     {
-      "source": "/analyze",
-      "destination": "/index.html"
+      "src": "^/analyze$",
+      "dest": "/index.html"
     },
     {
-      "source": "/payment/success",
-      "destination": "/paid-success.html"
+      "src": "^/analyze/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/payment/success",
+      "dest": "/paid-success.html"
+    },
+    {
+      "src": "(.*)",
+      "dest": "$1"
     }
   ]
 }
