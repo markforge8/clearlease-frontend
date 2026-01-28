@@ -117,8 +117,14 @@ async function checkForRecoverableAnalysis() {
         
         const data = await response.json();
         if (data.success && data.data.analysis) {
-            // Backend returned analysis, render it
-            displayResults(data.data.analysis);
+            // Backend returned analysis, render it based on paid status
+            if (data.data.paid) {
+                // Paid user - show full analysis
+                displayFullAnalysis(data.data.analysis);
+            } else {
+                // Free user - show preview with upgrade prompt
+                displayPreviewAnalysis(data.data.analysis);
+            }
         }
     } catch (error) {
         console.error('Error checking for recoverable analysis:', error);
@@ -408,20 +414,31 @@ async function handleAnalyze() {
 
     // Check if user is logged in
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
     
-    if (!token || !user) {
+    if (!token) {
         // Not logged in - show login section
         loginSection.style.display = 'block';
         showError('Please login first to analyze your lease agreement.');
         return;
     }
     
-    // No need to check paid status here
-    // Backend will handle it and return locked status with preview content
+    // Get user info to check paid status
+    let userData;
+    try {
+        userData = await fetchUserInfo();
+        if (!userData) {
+            loginSection.style.display = 'block';
+            showError('Please login first to analyze your lease agreement.');
+            return;
+        }
+        console.log('User paid status:', userData.paid);
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        loginSection.style.display = 'block';
+        showError('Please login first to analyze your lease agreement.');
+        return;
+    }
     
-    // Logged in - proceed with analysis
-    // Backend will return appropriate content based on user status
     // Reset UI
     hideAllSections();
     showLoading();
@@ -450,7 +467,16 @@ async function handleAnalyze() {
             localStorage.setItem('analysis_id', data.analysis_id);
         }
         
-        displayResults(data);
+        // Display results based on paid status
+        if (userData.paid) {
+            // Paid user - show full analysis
+            console.log('Paid user - showing full analysis');
+            displayFullAnalysis(data);
+        } else {
+            // Free user - show preview with upgrade prompt
+            console.log('Free user - showing preview with upgrade prompt');
+            displayPreviewAnalysis(data);
+        }
 
     } catch (error) {
         console.error('Analysis error:', error);
@@ -462,9 +488,9 @@ async function handleAnalyze() {
 }
 
 /**
- * Display analysis results
+ * Display full analysis for paid users
  */
-function displayResults(data) {
+function displayFullAnalysis(data) {
     // Hide loading and error states
     hideAllSections();
 
@@ -473,39 +499,18 @@ function displayResults(data) {
         displayOverview(data.overview);
     }
 
-    // Display risk items based on locked status
-    if (data.locked) {
-        // Show preview if available
-        if (data.preview) {
-            const riskItems = extractRiskItems(data.preview);
-            if (riskItems.length > 0) {
-                displayRiskItems(riskItems);
-            } else {
-                showNoRisksFound();
-            }
-        } else {
-            const riskItems = extractRiskItems(data);
-            if (riskItems.length > 0) {
-                displayRiskItems(riskItems);
-            } else {
-                showNoRisksFound();
-            }
-        }
-        // Show upgrade prompt
-        addUpgradePromptToResults();
+    // Show full analysis
+    const riskItems = extractRiskItems(data);
+    if (riskItems.length > 0) {
+        displayRiskItems(riskItems);
     } else {
-        // Show full analysis
-        const riskItems = extractRiskItems(data);
-        if (riskItems.length > 0) {
-            displayRiskItems(riskItems);
-        } else {
-            showNoRisksFound();
-        }
-        // Remove any existing upgrade prompts
-        const upgradePrompt = document.getElementById('lockedUpgradePrompt');
-        if (upgradePrompt) {
-            upgradePrompt.remove();
-        }
+        showNoRisksFound();
+    }
+    
+    // Remove any existing upgrade prompts
+    const upgradePrompt = document.getElementById('lockedUpgradePrompt');
+    if (upgradePrompt) {
+        upgradePrompt.remove();
     }
 
     // Show results section
@@ -513,6 +518,45 @@ function displayResults(data) {
 
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Display preview analysis for free users
+ */
+function displayPreviewAnalysis(data) {
+    // Hide loading and error states
+    hideAllSections();
+
+    // Display overview if available
+    if (data.overview) {
+        displayOverview(data.overview);
+    }
+
+    // Show preview
+    const riskItems = extractRiskItems(data);
+    if (riskItems.length > 0) {
+        displayRiskItems(riskItems);
+    } else {
+        showNoRisksFound();
+    }
+    
+    // Show upgrade prompt
+    addUpgradePromptToResults();
+
+    // Show results section
+    resultsSection.style.display = 'block';
+
+    // Scroll to results
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Display analysis results
+ */
+function displayResults(data) {
+    // This function is now deprecated, use displayFullAnalysis or displayPreviewAnalysis instead
+    console.warn('displayResults is deprecated, use displayFullAnalysis or displayPreviewAnalysis instead');
+    displayPreviewAnalysis(data);
 }
 
 /**
