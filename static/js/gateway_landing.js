@@ -117,14 +117,9 @@ async function checkForRecoverableAnalysis() {
         
         const data = await response.json();
         if (data.success && data.data.analysis) {
-            // Backend returned analysis, render it based on paid status
-            if (data.data.paid) {
-                // Paid user - show full analysis
-                displayFullAnalysis(data.data.analysis);
-            } else {
-                // Free user - show preview with upgrade prompt
-                displayPreviewAnalysis(data.data.analysis);
-            }
+            // Backend returned analysis, render it according to new control flow
+            console.log('Recovered analysis:', data.data.analysis);
+            displayAnalysisResults(data.data.analysis);
         }
     } catch (error) {
         console.error('Error checking for recoverable analysis:', error);
@@ -422,21 +417,15 @@ async function handleAnalyze() {
         return;
     }
     
-    // Get user info to check paid status
+    // Get user info to check login status
     let userData;
     try {
         userData = await fetchUserInfo();
-        if (!userData) {
-            loginSection.style.display = 'block';
-            showError('Please login first to analyze your lease agreement.');
-            return;
-        }
-        console.log('User paid status:', userData.paid);
+        console.log('User info:', userData);
     } catch (error) {
         console.error('Error fetching user info:', error);
-        loginSection.style.display = 'block';
-        showError('Please login first to analyze your lease agreement.');
-        return;
+        // Continue with analysis even if user info fetch fails
+        // Analysis should always be available
     }
     
     // Reset UI
@@ -467,16 +456,9 @@ async function handleAnalyze() {
             localStorage.setItem('analysis_id', data.analysis_id);
         }
         
-        // Display results based on paid status
-        if (userData.paid) {
-            // Paid user - show full analysis
-            console.log('Paid user - showing full analysis');
-            displayFullAnalysis(data);
-        } else {
-            // Free user - show preview with upgrade prompt
-            console.log('Free user - showing preview with upgrade prompt');
-            displayPreviewAnalysis(data);
-        }
+        // Display results according to new control flow
+        console.log('Analysis results:', data);
+        displayAnalysisResults(data);
 
     } catch (error) {
         console.error('Analysis error:', error);
@@ -488,60 +470,103 @@ async function handleAnalyze() {
 }
 
 /**
- * Display full analysis for paid users
+ * Render basic analysis
  */
-function displayFullAnalysis(data) {
-    // Hide loading and error states
-    hideAllSections();
-
+function renderBasicAnalysis(basicResult) {
     // Display overview if available
-    if (data.overview) {
-        displayOverview(data.overview);
+    if (basicResult.overview) {
+        displayOverview(basicResult.overview);
     }
 
-    // Show full analysis
-    const riskItems = extractRiskItems(data);
+    // Show basic analysis
+    const riskItems = extractRiskItems(basicResult);
     if (riskItems.length > 0) {
         displayRiskItems(riskItems);
     } else {
         showNoRisksFound();
     }
-    
-    // Remove any existing upgrade prompts
-    const upgradePrompt = document.getElementById('lockedUpgradePrompt');
-    if (upgradePrompt) {
-        upgradePrompt.remove();
-    }
-
-    // Show results section
-    resultsSection.style.display = 'block';
-
-    // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
- * Display preview analysis for free users
+ * Render full analysis
  */
-function displayPreviewAnalysis(data) {
+function renderFullAnalysis(fullResult) {
+    if (!fullResult) return;
+    
+    // Show full analysis (add additional details if needed)
+    // For now, we'll just display it as is
+    const fullRiskItems = extractRiskItems(fullResult);
+    if (fullRiskItems.length > 0) {
+        // Create a section for full analysis
+        const fullAnalysisSection = document.createElement('div');
+        fullAnalysisSection.id = 'fullAnalysisSection';
+        fullAnalysisSection.style.cssText = 'margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;';
+        
+        const fullAnalysisTitle = document.createElement('h3');
+        fullAnalysisTitle.textContent = 'Detailed Analysis';
+        fullAnalysisTitle.style.cssText = 'margin-bottom: 1rem;';
+        
+        fullAnalysisSection.appendChild(fullAnalysisTitle);
+        
+        // Add full analysis items
+        const fullRiskItemsContainer = document.createElement('div');
+        fullRiskItemsContainer.innerHTML = fullRiskItems.map(item => {
+            const severityClass = normalizeSeverity(item.severity);
+            const severityLabel = severityClass.charAt(0).toUpperCase() + severityClass.slice(1);
+
+            return `
+                <div class="risk-item severity-${severityClass}">
+                    <div class="risk-item-header">
+                        <div class="risk-item-title">${escapeHtml(item.title)}</div>
+                        <div class="risk-item-severity ${severityClass}">Detailed: ${severityLabel}</div>
+                    </div>
+                    <div class="risk-item-message">${escapeHtml(item.message)}</div>
+                    ${item.action ? `<div class="risk-item-action">Recommended: ${escapeHtml(item.action)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        fullAnalysisSection.appendChild(fullRiskItemsContainer);
+        
+        // Add to results section
+        if (resultsSection) {
+            resultsSection.appendChild(fullAnalysisSection);
+        }
+    }
+}
+
+/**
+ * Render upgrade CTA
+ */
+function renderUpgradeCTA() {
+    addUpgradePromptToResults();
+}
+
+/**
+ * Display analysis results according to new control flow
+ */
+function displayAnalysisResults(data) {
     // Hide loading and error states
     hideAllSections();
 
-    // Display overview if available
-    if (data.overview) {
-        displayOverview(data.overview);
-    }
-
-    // Show preview
-    const riskItems = extractRiskItems(data);
-    if (riskItems.length > 0) {
-        displayRiskItems(riskItems);
+    // Always render basic analysis
+    if (data.basic_result) {
+        renderBasicAnalysis(data.basic_result);
     } else {
+        // If no basic_result, show no risks found
         showNoRisksFound();
     }
-    
-    // Show upgrade prompt
-    addUpgradePromptToResults();
+
+    // Handle locked status
+    if (data.locked) {
+        // Show upgrade CTA for locked users
+        renderUpgradeCTA();
+    } else {
+        // Show full analysis for unlocked users
+        if (data.full_result) {
+            renderFullAnalysis(data.full_result);
+        }
+    }
 
     // Show results section
     resultsSection.style.display = 'block';
