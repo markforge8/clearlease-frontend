@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClearLease - Contract Risk Analysis</title>
     <link rel="stylesheet" href="/static/css/gateway_landing.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         .login-section {
             background-color: #f8f9fa;
@@ -126,7 +126,6 @@
             <!-- Login Section -->
             <section id="loginSection" class="login-section" style="display: none;">
                 <h2>Login to Save Your Analysis</h2>
-                <p>We'll send you a magic link to your email - no password needed!</p>
                 <div class="login-form">
                     <input 
                         type="email" 
@@ -134,7 +133,14 @@
                         class="email-input" 
                         placeholder="Enter your email address"
                     >
-                    <button id="loginButton" class="login-button">Send Magic Link</button>
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        class="email-input" 
+                        placeholder="Enter your password"
+                    >
+                    <button id="loginButton" class="login-button">Login</button>
+                    <button id="registerButton" class="login-button" style="margin-top: 10px;">Register</button>
                 </div>
                 <p id="loginMessage" class="login-message"></p>
             </section>

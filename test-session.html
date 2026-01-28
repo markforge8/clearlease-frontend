@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Session Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            text-align: center;
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .login-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+        .login-button:hover {
+            background-color: #0069d9;
+        }
+        .session-info {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: left;
+            margin-top: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Supabase Session Test</h1>
+        <p>Minimal test page to verify session persistence after Magic Link login</p>
+        
+        <div class="test-section">
+            <h2>Login</h2>
+            <input type="email" id="emailInput" placeholder="Enter your email" style="padding: 0.5rem; width: 80%; margin: 1rem 0;">
+            <button id="loginButton" class="login-button">Send Magic Link</button>
+            <p id="loginMessage"></p>
+        </div>
+        
+        <div class="test-section">
+            <h2>Session Info</h2>
+            <button id="checkSessionButton" class="login-button">Check Session</button>
+            <div id="sessionInfo" class="session-info">Click "Check Session" to see session data</div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase initialization
+        const supabaseUrl = 'https://usbtgcbbupxccmooiugj.supabase.co';
+        const supabaseAnonKey = 'sb_publishable_ocY4DaGxx1os-wDlruQxsw_HX-eEHWC';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // DOM Elements
+        const emailInput = document.getElementById('emailInput');
+        const loginButton = document.getElementById('loginButton');
+        const loginMessage = document.getElementById('loginMessage');
+        const checkSessionButton = document.getElementById('checkSessionButton');
+        const sessionInfo = document.getElementById('sessionInfo');
+
+        // Check session on page load
+        async function checkSession() {
+            console.log('Checking session...');
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            console.log('Session:', session);
+            console.log('Error:', error);
+            
+            if (error) {
+                sessionInfo.textContent = `Error: ${error.message}`;
+            } else if (session) {
+                sessionInfo.textContent = `Session exists!\nAccess token: ${session.access_token.substring(0, 20)}...\nUser: ${session.user.email}`;
+            } else {
+                sessionInfo.textContent = 'No session found';
+            }
+        }
+
+        // Handle login
+        async function handleLogin() {
+            const email = emailInput.value.trim();
+            if (!email) {
+                loginMessage.textContent = 'Please enter your email';
+                return;
+            }
+
+            loginButton.disabled = true;
+            loginMessage.textContent = 'Sending magic link...';
+
+            try {
+                const { error } = await supabaseClient.auth.signInWithOtp({
+                    email,
+                    options: {
+                        emailRedirectTo: window.location.href
+                    }
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                loginMessage.textContent = 'Magic link sent! Check your email.';
+            } catch (error) {
+                console.error('Login error:', error);
+                loginMessage.textContent = `Error: ${error.message}`;
+            } finally {
+                loginButton.disabled = false;
+            }
+        }
+
+        // Event listeners
+        loginButton.addEventListener('click', handleLogin);
+        checkSessionButton.addEventListener('click', checkSession);
+
+        // Check session on page load
+        window.addEventListener('DOMContentLoaded', checkSession);
+
+        // Listen for auth state changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state change:', event, session);
+            if (event === 'SIGNED_IN') {
+                console.log('Signed in successfully:', session);
+                checkSession();
+            }
+        });
+    </script>
+</body>
+</html>

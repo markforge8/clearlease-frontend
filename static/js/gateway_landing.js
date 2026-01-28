@@ -4,12 +4,9 @@
 // API Configuration
 const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
 const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
-const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/me`;
-
-// Supabase initialization
-const supabaseUrl = 'https://usbtgcbbupxccmooiugj.supabase.co';
-const supabaseAnonKey = 'sb_publishable_ocY4DaGxx1os-wDlruQxsw_HX-eEHWC';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
+const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
+const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
 
 // DOM Elements
 const leaseTextarea = document.getElementById('leaseText');
@@ -24,7 +21,9 @@ const errorMessage = document.getElementById('errorMessage');
 // Login Elements
 const loginSection = document.getElementById('loginSection');
 const emailInput = document.getElementById('emailInput');
+const passwordInput = document.getElementById('passwordInput');
 const loginButton = document.getElementById('loginButton');
+const registerButton = document.getElementById('registerButton');
 const loginMessage = document.getElementById('loginMessage');
 const userInfo = document.getElementById('userInfo');
 const userEmail = document.getElementById('userEmail');
@@ -34,6 +33,7 @@ const explicitLoginButton = document.getElementById('explicitLoginButton');
 // Event Listeners
 analyzeButton.addEventListener('click', handleAnalyze);
 loginButton.addEventListener('click', handleLogin);
+registerButton.addEventListener('click', handleRegister);
 logoutButton.addEventListener('click', handleLogout);
 explicitLoginButton.addEventListener('click', () => {
     loginSection.style.display = 'block';
@@ -53,83 +53,163 @@ emailInput.addEventListener('keydown', (e) => {
     }
 });
 
-// Check for auth changes
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') {
-        updateUserInfo(session.user);
-        // Hide login button when signed in
-        explicitLoginButton.style.display = 'none';
-        checkUserStatus();
-    } else if (event === 'SIGNED_OUT') {
-        clearUserInfo();
-        // Show login button when signed out
-        explicitLoginButton.style.display = 'block';
-        checkUserStatus();
+// Handle Enter key in password input
+passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        handleLogin();
     }
 });
 
 // Initialize app
 window.addEventListener('DOMContentLoaded', async () => {
     // Check if user is already logged in
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (user) {
-        updateUserInfo(user);
-        // Hide login button when signed in
-        explicitLoginButton.style.display = 'none';
+    const token = localStorage.getItem('token');
+    if (token) {
+        // Validate token and get user info
+        try {
+            const userData = await fetchUserInfo();
+            if (userData) {
+                updateUserInfo(userData);
+                // Hide login button when signed in
+                explicitLoginButton.style.display = 'none';
+                // Check user status and redirect if needed
+                checkUserStatusAndRedirect(userData);
+            }
+        } catch (error) {
+            // Token invalid, clear it
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Show login button when signed out
+            explicitLoginButton.style.display = 'block';
+        }
     } else {
         // Show login button when signed out
         explicitLoginButton.style.display = 'block';
     }
-    checkUserStatus();
 });
 
 /**
- * Handle login with email magic link
+ * Handle login
  */
 async function handleLogin() {
     const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
     
-    if (!email) {
-        loginMessage.textContent = 'Please enter your email address';
+    if (!email || !password) {
+        loginMessage.textContent = 'Please enter both email and password';
         return;
     }
     
     loginButton.disabled = true;
-    loginMessage.textContent = 'Sending magic link...';
+    registerButton.disabled = true;
+    loginMessage.textContent = 'Logging in...';
     
     try {
-        const { error } = await supabaseClient.auth.signInWithOtp({
-            email,
-            options: {
-                emailRedirectTo: window.location.href
-            }
+        const response = await fetch(API_LOGIN_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
         });
         
-        if (error) {
-            throw error;
-        }
+        const data = await response.json();
         
-        loginMessage.textContent = 'Magic link sent! Check your email to log in.';
+        if (data.success) {
+            // Save token and user info
+            localStorage.setItem('token', data.data.token);
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+            
+            // Update UI
+            updateUserInfo(data.data.user);
+            loginMessage.textContent = 'Login successful!';
+            
+            // Hide login button
+            explicitLoginButton.style.display = 'none';
+            
+            // Redirect based on paid status
+            checkUserStatusAndRedirect(data.data.user);
+        } else {
+            loginMessage.textContent = 'Login failed: ' + (data.message || 'Invalid credentials');
+        }
     } catch (error) {
         console.error('Login error:', error);
-        loginMessage.textContent = `Error sending magic link: ${error.message}`;
+        loginMessage.textContent = 'Error logging in. Please try again.';
     } finally {
         loginButton.disabled = false;
+        registerButton.disabled = false;
+    }
+}
+
+/**
+ * Handle register
+ */
+async function handleRegister() {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    
+    if (!email || !password) {
+        loginMessage.textContent = 'Please enter both email and password';
+        return;
+    }
+    
+    loginButton.disabled = true;
+    registerButton.disabled = true;
+    loginMessage.textContent = 'Registering...';
+    
+    try {
+        const response = await fetch(API_REGISTER_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Save token and user info
+            localStorage.setItem('token', data.data.token);
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+            
+            // Update UI
+            updateUserInfo(data.data.user);
+            loginMessage.textContent = 'Registration successful!';
+            
+            // Hide login button
+            explicitLoginButton.style.display = 'none';
+            
+            // Redirect based on paid status
+            checkUserStatusAndRedirect(data.data.user);
+        } else {
+            loginMessage.textContent = 'Registration failed: ' + (data.message || 'Invalid information');
+        }
+    } catch (error) {
+        console.error('Register error:', error);
+        loginMessage.textContent = 'Error registering. Please try again.';
+    } finally {
+        loginButton.disabled = false;
+        registerButton.disabled = false;
     }
 }
 
 /**
  * Handle logout
  */
-async function handleLogout() {
-    try {
-        const { error } = await supabaseClient.auth.signOut();
-        if (error) {
-            throw error;
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
+function handleLogout() {
+    // Clear token and user info
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Update UI
+    clearUserInfo();
+    
+    // Show login button
+    explicitLoginButton.style.display = 'block';
+    
+    // Redirect to login page (home)
+    window.location.href = '/';
 }
 
 /**
@@ -154,87 +234,56 @@ function clearUserInfo() {
 }
 
 /**
- * Check user status and update UI accordingly
+ * Fetch user info from API
  */
-async function checkUserStatus() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
+async function fetchUserInfo() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No token');
+    }
     
+    const response = await fetch(API_ME_ENDPOINT, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch user info');
+    }
+    
+    const data = await response.json();
+    if (data.success) {
+        return data.data.user;
+    } else {
+        throw new Error('Failed to fetch user info');
+    }
+}
+
+/**
+ * Check user status and redirect if needed
+ */
+function checkUserStatusAndRedirect(user) {
     if (!user) {
-        // State A: Not logged in
-        // Show login button
-        explicitLoginButton.style.display = 'block';
-        // Hide user info
-        userInfo.style.display = 'none';
-        // Show free version
-        await showFreeVersion();
+        // Not logged in, show login page
+        window.location.href = '/';
         return;
     }
     
-    // User is logged in
-    // Hide login button
-    explicitLoginButton.style.display = 'none';
-    // Show user info
-    userInfo.style.display = 'block';
-    
-    // Get paid status from API
-    try {
-        const { data, error } = await supabaseClient.auth.getSession();
-        if (error || !data.session) {
-            console.error('Session error:', error);
-            throw error;
-        }
-        
-        console.log('Session data:', data.session);
-        console.log('Access token:', data.session.access_token ? 'Token present' : 'Token missing');
-        
-        const session = data.session;
-        
-        console.log('Calling API:', API_ME_ENDPOINT);
-        console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
-        
-        const response = await fetch(API_ME_ENDPOINT, {
-            headers: {
-                'Authorization': `Bearer ${session.access_token}`
-            }
-        });
-        
-        console.log('API response status:', response.status);
-        console.log('API response headers:', Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API error response:', errorText);
-            throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-        }
-        
-        const userData = await response.json();
-        const paid = userData.paid || false;
-        
-        if (paid) {
-            // State C: Logged in and paid
-            // Unlock all features
-            unlockAllFeatures();
-        } else {
-            // State B: Logged in but not paid
-            // Show free version with upgrade CTA
-            await showFreeVersion();
-            showUpgradeCTA();
-        }
-    } catch (error) {
-        console.error('Error checking user status:', error);
-        // Fallback to free version if API call fails
-        await showFreeVersion();
+    // No need to redirect, just update UI based on paid status
+    if (user.paid) {
+        // Paid user, unlock all features
+        unlockAllFeatures();
+    } else {
+        // Free user, show upgrade CTA
         showUpgradeCTA();
     }
 }
 
 /**
- * Show free version of the app
+ * Show free version
  */
 async function showFreeVersion() {
-    // Check if user is logged in
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    
     // Remove any existing login prompt
     const loginPrompt = document.getElementById('loginPrompt');
     if (loginPrompt) {
@@ -263,7 +312,7 @@ function showUpgradeCTA() {
     
     // Add event listener to upgrade button
     upgradeCTA.querySelector('.upgrade-button').addEventListener('click', () => {
-        // Redirect to payment page or show payment options
+        // Redirect to payment page
         window.location.href = '/payment.html';
     });
     
@@ -305,92 +354,55 @@ async function handleAnalyze() {
     }
 
     // Check if user is logged in
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
     
-    if (!user) {
-        // State A: Not logged in - show login section
+    if (!token || !user) {
+        // Not logged in - show login section
         loginSection.style.display = 'block';
         showError('Please login first to analyze your lease agreement.');
         return;
     }
     
-    // User is logged in, get paid status
-    try {
-        const { data, error } = await supabaseClient.auth.getSession();
-        if (error || !data.session) {
-            console.error('Session error:', error);
-            throw error;
-        }
-        
-        console.log('Session data:', data.session);
-        console.log('Access token:', data.session.access_token ? 'Token present' : 'Token missing');
-        
-        const session = data.session;
-        
-        console.log('Calling API:', API_ME_ENDPOINT);
-        console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
-        
-        const response = await fetch(API_ME_ENDPOINT, {
-            headers: {
-                'Authorization': `Bearer ${session.access_token}`
-            }
-        });
-        
-        console.log('API response status:', response.status);
-        console.log('API response headers:', Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API error response:', errorText);
-            throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
-        }
-        
-        const userData = await response.json();
-        const paid = userData.paid || false;
-        
-        if (!paid) {
-            // State B: Logged in but not paid - redirect to Gumroad
-            window.location.href = '/payment.html';
-            return;
-        }
-        
-        // State C: Logged in and paid - proceed with analysis
-        // Reset UI
-        hideAllSections();
-        showLoading();
-        analyzeButton.disabled = true;
-
-        try {
-            const response = await fetch(API_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    contract_text: leaseText
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            displayResults(data);
-
-        } catch (error) {
-            console.error('Analysis error:', error);
-            showError(`Unable to analyze your lease. Please try again later. ${error.message}`);
-        } finally {
-            hideLoading();
-            analyzeButton.disabled = false;
-        }
-        
-    } catch (error) {
-        console.error('Error checking user status:', error);
-        showError('Please login and upgrade to analyze your lease agreement.');
+    const parsedUser = JSON.parse(user);
+    
+    if (!parsedUser.paid) {
+        // Logged in but not paid - redirect to payment page
+        window.location.href = '/payment.html';
         return;
+    }
+    
+    // Logged in and paid - proceed with analysis
+    // Reset UI
+    hideAllSections();
+    showLoading();
+    analyzeButton.disabled = true;
+
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                contract_text: leaseText
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        displayResults(data);
+
+    } catch (error) {
+        console.error('Analysis error:', error);
+        showError(`Unable to analyze your lease. Please try again later. ${error.message}`);
+    } finally {
+        hideLoading();
+        analyzeButton.disabled = false;
     }
 }
 
@@ -641,4 +653,3 @@ function showExplanation(riskCode, clauseTitle) {
         explanationSection.style.display = 'block';
     }
 }
-
