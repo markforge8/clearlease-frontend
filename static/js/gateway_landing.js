@@ -74,6 +74,8 @@ window.addEventListener('DOMContentLoaded', async () => {
                 explicitLoginButton.style.display = 'none';
                 // Check user status and redirect if needed
                 checkUserStatusAndRedirect(userData);
+                // Check for recoverable analysis
+                await checkForRecoverableAnalysis();
             }
         } catch (error) {
             // Token invalid, clear it
@@ -86,7 +88,102 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Show login button when signed out
         explicitLoginButton.style.display = 'block';
     }
+    
+    // Check if user has just unlocked the app
+    checkUnlockStatus();
 });
+
+/**
+ * Check for recoverable analysis from backend
+ */
+async function checkForRecoverableAnalysis() {
+    const token = localStorage.getItem('token');
+    const analysisId = localStorage.getItem('analysis_id');
+    
+    if (!token || !analysisId) {
+        return;
+    }
+    
+    try {
+        // Request backend for current user status and recoverable analysis
+        const response = await fetch(`${BACKEND_BASE_URL}/api/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch user status');
+        }
+        
+        const data = await response.json();
+        if (data.success && data.data.analysis) {
+            // Backend returned analysis, render it
+            displayResults(data.data.analysis);
+        }
+    } catch (error) {
+        console.error('Error checking for recoverable analysis:', error);
+    }
+}
+
+/**
+ * Check if user has just unlocked the app and show confirmation
+ */
+function checkUnlockStatus() {
+    const unlocked = localStorage.getItem('unlocked');
+    if (unlocked) {
+        // Show unlock confirmation
+        showUnlockConfirmation();
+        // Clear unlock status
+        localStorage.removeItem('unlocked');
+    }
+}
+
+/**
+ * Show unlock confirmation message
+ */
+function showUnlockConfirmation() {
+    // Create confirmation element
+    const confirmation = document.createElement('div');
+    confirmation.id = 'unlockConfirmation';
+    confirmation.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #28a745;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Set content
+    confirmation.textContent = 'Full analysis unlocked!';
+    
+    // Add to document
+    document.body.appendChild(confirmation);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        confirmation.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => {
+            confirmation.remove();
+            style.remove();
+        }, 300);
+    }, 3000);
+}
 
 /**
  * Handle login
@@ -270,56 +367,8 @@ function checkUserStatusAndRedirect(user) {
         return;
     }
     
-    // Update UI based on paid status
-    if (user.paid) {
-        // Paid user, unlock all features
-        unlockAllFeatures();
-        enableAdvancedFeatures();
-    } else {
-        // Free user, show upgrade CTA and disable advanced features
-        showUpgradeCTA();
-        disableAdvancedFeatures();
-    }
-}
-
-/**
- * Enable advanced features for paid users
- */
-function enableAdvancedFeatures() {
-    // Enable analyze button
-    analyzeButton.disabled = false;
-    analyzeButton.title = '';
-    
-    // Remove any upgrade prompts
-    const upgradePrompt = document.getElementById('upgradePrompt');
-    if (upgradePrompt) {
-        upgradePrompt.remove();
-    }
-}
-
-/**
- * Disable advanced features for free users
- */
-function disableAdvancedFeatures() {
-    // Add upgrade prompt if it doesn't exist
-    if (!document.getElementById('upgradePrompt')) {
-        const upgradePrompt = document.createElement('div');
-        upgradePrompt.id = 'upgradePrompt';
-        upgradePrompt.className = 'upgrade-cta';
-        upgradePrompt.innerHTML = `
-            <h3>Upgrade to Unlock All Features</h3>
-            <p>Get unlimited analyses, detailed explanations, and more with a paid plan.</p>
-        `;
-        
-        // Insert before input section
-        const inputSection = document.querySelector('.input-section');
-        if (inputSection) {
-            inputSection.parentNode.insertBefore(upgradePrompt, inputSection);
-        }
-    }
-    
-    // Update analyze button
-    analyzeButton.title = 'Upgrade to use this feature';
+    // User is logged in, no need to check paid status here
+    // Backend will handle it and return locked status in API responses
 }
 
 /**
@@ -354,8 +403,16 @@ function showUpgradeCTA() {
     
     // Add event listener to upgrade button
     upgradeCTA.querySelector('.upgrade-button').addEventListener('click', () => {
-        // Redirect to payment page
-        window.location.href = '/payment.html';
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // Not logged in, show login section
+            loginSection.style.display = 'block';
+        } else {
+            // Logged in, redirect to Gumroad payment page
+            // Replace with actual Gumroad URL
+            window.location.href = 'https://gumroad.com/l/clearlease';
+        }
     });
     
     // Insert before results section
@@ -406,15 +463,11 @@ async function handleAnalyze() {
         return;
     }
     
-    const parsedUser = JSON.parse(user);
+    // No need to check paid status here
+    // Backend will handle it and return locked status with preview content
     
-    if (!parsedUser.paid) {
-        // Logged in but not paid - show upgrade prompt
-        showError('Please upgrade to a paid plan to use this feature.');
-        return;
-    }
-    
-    // Logged in and paid - proceed with analysis
+    // Logged in - proceed with analysis
+    // Backend will return appropriate content based on user status
     // Reset UI
     hideAllSections();
     showLoading();
@@ -437,6 +490,12 @@ async function handleAnalyze() {
         }
 
         const data = await response.json();
+        
+        // Save analysis_id if provided
+        if (data.analysis_id) {
+            localStorage.setItem('analysis_id', data.analysis_id);
+        }
+        
         displayResults(data);
 
     } catch (error) {
@@ -460,12 +519,39 @@ function displayResults(data) {
         displayOverview(data.overview);
     }
 
-    // Display risk items
-    const riskItems = extractRiskItems(data);
-    if (riskItems.length > 0) {
-        displayRiskItems(riskItems);
+    // Display risk items based on locked status
+    if (data.locked) {
+        // Show preview if available
+        if (data.preview) {
+            const riskItems = extractRiskItems(data.preview);
+            if (riskItems.length > 0) {
+                displayRiskItems(riskItems);
+            } else {
+                showNoRisksFound();
+            }
+        } else {
+            const riskItems = extractRiskItems(data);
+            if (riskItems.length > 0) {
+                displayRiskItems(riskItems);
+            } else {
+                showNoRisksFound();
+            }
+        }
+        // Show upgrade prompt
+        addUpgradePromptToResults();
     } else {
-        showNoRisksFound();
+        // Show full analysis
+        const riskItems = extractRiskItems(data);
+        if (riskItems.length > 0) {
+            displayRiskItems(riskItems);
+        } else {
+            showNoRisksFound();
+        }
+        // Remove any existing upgrade prompts
+        const upgradePrompt = document.getElementById('lockedUpgradePrompt');
+        if (upgradePrompt) {
+            upgradePrompt.remove();
+        }
     }
 
     // Show results section
@@ -473,6 +559,45 @@ function displayResults(data) {
 
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Add upgrade prompt to results section when locked
+ */
+function addUpgradePromptToResults() {
+    // Check if upgrade prompt already exists
+    if (document.getElementById('lockedUpgradePrompt')) {
+        return;
+    }
+    
+    // Add upgrade prompt to results section
+    const upgradePrompt = document.createElement('div');
+    upgradePrompt.id = 'lockedUpgradePrompt';
+    upgradePrompt.className = 'upgrade-cta';
+    upgradePrompt.innerHTML = `
+        <h3>Upgrade to Unlock Full Analysis</h3>
+        <p>This is a preview of your analysis. Upgrade to a paid plan to see the complete details.</p>
+        <button class="upgrade-button">Upgrade Now</button>
+    `;
+    
+    // Add event listener to upgrade button
+    upgradePrompt.querySelector('.upgrade-button').addEventListener('click', () => {
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // Not logged in, show login section
+            loginSection.style.display = 'block';
+        } else {
+            // Logged in, redirect to Gumroad payment page
+            // Replace with actual Gumroad URL
+            window.location.href = 'https://gumroad.com/l/clearlease';
+        }
+    });
+    
+    // Insert into results section
+    if (resultsSection) {
+        resultsSection.appendChild(upgradePrompt);
+    }
 }
 
 /**
