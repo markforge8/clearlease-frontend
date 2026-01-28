@@ -77,212 +77,27 @@
 </head>
 <body>
     <div class="container">
-        <h1>Payment Processing</h1>
-        <p id="statusMessage">Checking your payment status...</p>
-        <div id="loadingIndicator" class="loading"></div>
-        
-        <!-- Login Section (hidden by default) -->
-        <div id="loginSection" class="login-section" style="display: none;">
-            <h2>Please login to complete your purchase</h2>
-            <p>We need to link your payment to your account.</p>
-            <input 
-                type="email" 
-                id="emailInput" 
-                class="email-input" 
-                placeholder="Enter your email address"
-            >
-            <input 
-                type="password" 
-                id="passwordInput" 
-                class="email-input" 
-                placeholder="Enter your password"
-            >
-            <button id="loginButton" class="login-button">Login</button>
-            <button id="registerButton" class="login-button" style="margin-top: 10px;">Register</button>
-            <p id="loginMessage" class="login-message"></p>
+        <h1>Payment received</h1>
+        <p id="statusMessage">Thank you for your payment!</p>
+        <div id="infoMessage" style="margin: 20px 0; color: #666;">
+            <p>Please login with your payment email to access the features.</p>
         </div>
+        <button id="loginRedirectButton" class="login-button">Go to Login Page</button>
     </div>
     <script>
-        // API Configuration
-        const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
-        const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
-        const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
-        const API_ACTIVATE_PAID_ENDPOINT = `${BACKEND_BASE_URL}/api/activate-paid`;
-        const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
-        
         // DOM Elements
-        const statusMessage = document.getElementById('statusMessage');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const loginSection = document.getElementById('loginSection');
-        const emailInput = document.getElementById('emailInput');
-        const passwordInput = document.getElementById('passwordInput');
-        const loginButton = document.getElementById('loginButton');
-        const registerButton = document.getElementById('registerButton');
-        const loginMessage = document.getElementById('loginMessage');
+        const loginRedirectButton = document.getElementById('loginRedirectButton');
         
         // Event Listeners
-        loginButton.addEventListener('click', handleLogin);
-        registerButton.addEventListener('click', handleRegister);
-        
-        // Handle Enter key in inputs
-        emailInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-        
-        passwordInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
+        loginRedirectButton.addEventListener('click', () => {
+            // Redirect to main page (which has login functionality)
+            window.location.href = 'https://clearlease-frontend.vercel.app/';
         });
         
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
-            // Show payment received message
-            statusMessage.textContent = 'Payment received!';
-            loadingIndicator.style.display = 'none';
-            loginSection.style.display = 'block';
+            // No additional initialization needed
         });
-        
-        /**
-         * Show login section
-         */
-        function showLoginSection() {
-            statusMessage.textContent = 'Payment received!';
-            loadingIndicator.style.display = 'none';
-            loginSection.style.display = 'block';
-        }
-        
-        /**
-         * Handle login
-         */
-        async function handleLogin() {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            if (!email || !password) {
-                loginMessage.textContent = 'Please enter both email and password';
-                return;
-            }
-            
-            loginButton.disabled = true;
-            registerButton.disabled = true;
-            loginMessage.textContent = 'Logging in...';
-            
-            try {
-                console.log('Attempting to login with email:', email);
-                
-                const response = await fetch(API_LOGIN_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                console.log('Login response status:', response.status);
-                
-                const data = await response.json();
-                console.log('Login response data:', data);
-                
-                if (data.success) {
-                    // Save token and user info
-                    console.log('Login successful, saving token and user info');
-                    localStorage.setItem('token', data.data.token);
-                    
-                    // Save user info without modifying paid status
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
-                    console.log('Token saved:', data.data.token.substring(0, 20) + '...');
-                    console.log('User saved:', data.data.user);
-                    
-                    // Redirect to main page
-                    statusMessage.textContent = 'Login successful! Redirecting...';
-                    
-                    setTimeout(() => {
-                        console.log('Redirecting to main page');
-                        window.location.href = 'https://clearlease-frontend.vercel.app/';
-                    }, 1000);
-                } else {
-                    console.error('Login failed:', data.message);
-                    loginMessage.textContent = 'Login failed: ' + (data.message || 'Invalid credentials');
-                    loginButton.disabled = false;
-                    registerButton.disabled = false;
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                loginMessage.textContent = 'Error logging in. Please try again.';
-                loginButton.disabled = false;
-                registerButton.disabled = false;
-            }
-        }
-        
-        /**
-         * Handle register
-         */
-        async function handleRegister() {
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            if (!email || !password) {
-                loginMessage.textContent = 'Please enter both email and password';
-                return;
-            }
-            
-            loginButton.disabled = true;
-            registerButton.disabled = true;
-            loginMessage.textContent = 'Registering...';
-            
-            try {
-                console.log('Attempting to register with email:', email);
-                
-                const response = await fetch(API_REGISTER_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                console.log('Register response status:', response.status);
-                
-                const data = await response.json();
-                console.log('Register response data:', data);
-                
-                if (data.success) {
-                    // Save token and user info
-                    console.log('Registration successful, saving token and user info');
-                    localStorage.setItem('token', data.data.token);
-                    
-                    // Save user info without modifying paid status
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
-                    console.log('Token saved:', data.data.token.substring(0, 20) + '...');
-                    console.log('User saved:', data.data.user);
-                    
-                    // Redirect to main page
-                    statusMessage.textContent = 'Registration successful! Redirecting...';
-                    
-                    setTimeout(() => {
-                        console.log('Redirecting to main page');
-                        window.location.href = 'https://clearlease-frontend.vercel.app/';
-                    }, 1000);
-                } else {
-                    console.error('Registration failed:', data.message);
-                    loginMessage.textContent = 'Registration failed: ' + (data.message || 'Invalid information');
-                    loginButton.disabled = false;
-                    registerButton.disabled = false;
-                }
-            } catch (error) {
-                console.error('Register error:', error);
-                loginMessage.textContent = 'Error registering. Please try again.';
-                loginButton.disabled = false;
-                registerButton.disabled = false;
-            }
-        }
-        
-        
-        
-        
     </script>
 </body>
 </html>
