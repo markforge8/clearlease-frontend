@@ -2,7 +2,7 @@
 // Handles API communication and UI updates
 
 // API Configuration
-const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
+const BACKEND_BASE_URL = 'http://localhost:8000';
 const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
 const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
 const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
@@ -270,14 +270,56 @@ function checkUserStatusAndRedirect(user) {
         return;
     }
     
-    // No need to redirect, just update UI based on paid status
+    // Update UI based on paid status
     if (user.paid) {
         // Paid user, unlock all features
         unlockAllFeatures();
+        enableAdvancedFeatures();
     } else {
-        // Free user, show upgrade CTA
+        // Free user, show upgrade CTA and disable advanced features
         showUpgradeCTA();
+        disableAdvancedFeatures();
     }
+}
+
+/**
+ * Enable advanced features for paid users
+ */
+function enableAdvancedFeatures() {
+    // Enable analyze button
+    analyzeButton.disabled = false;
+    analyzeButton.title = '';
+    
+    // Remove any upgrade prompts
+    const upgradePrompt = document.getElementById('upgradePrompt');
+    if (upgradePrompt) {
+        upgradePrompt.remove();
+    }
+}
+
+/**
+ * Disable advanced features for free users
+ */
+function disableAdvancedFeatures() {
+    // Add upgrade prompt if it doesn't exist
+    if (!document.getElementById('upgradePrompt')) {
+        const upgradePrompt = document.createElement('div');
+        upgradePrompt.id = 'upgradePrompt';
+        upgradePrompt.className = 'upgrade-cta';
+        upgradePrompt.innerHTML = `
+            <h3>Upgrade to Unlock All Features</h3>
+            <p>Get unlimited analyses, detailed explanations, and more with a paid plan.</p>
+        `;
+        
+        // Insert before input section
+        const inputSection = document.querySelector('.input-section');
+        if (inputSection) {
+            inputSection.parentNode.insertBefore(upgradePrompt, inputSection);
+        }
+    }
+    
+    // Update analyze button
+    analyzeButton.title = 'Upgrade to use this feature';
 }
 
 /**
@@ -367,8 +409,8 @@ async function handleAnalyze() {
     const parsedUser = JSON.parse(user);
     
     if (!parsedUser.paid) {
-        // Logged in but not paid - redirect to payment page
-        window.location.href = '/payment.html';
+        // Logged in but not paid - show upgrade prompt
+        showError('Please upgrade to a paid plan to use this feature.');
         return;
     }
     
