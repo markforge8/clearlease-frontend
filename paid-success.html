@@ -296,30 +296,20 @@
                     }
                 });
                 
-                const activateData = await activateResponse.json();
-                
-                if (activateData.success) {
-                    // Refresh user info
-                    const userData = await fetchUserInfo(token);
-                    if (userData) {
-                        // Update user info in localStorage
-                        localStorage.setItem('user', JSON.stringify(userData));
-                        
-                        // Set unlock status for confirmation message
-                        localStorage.setItem('unlocked', 'true');
-                        
-                        // Redirect back to main page or analysis results
-                        statusMessage.textContent = 'Payment confirmed! Redirecting...';
-                        
-                        setTimeout(() => {
-                            window.location.href = 'https://clearlease-frontend.vercel.app/';
-                        }, 1000);
-                    } else {
-                        throw new Error('Failed to refresh user info');
-                    }
-                } else {
+                if (!activateResponse.ok) {
                     throw new Error('Failed to activate paid status');
                 }
+                
+                // Success path - only check HTTP status code
+                // Set unlock status for confirmation message
+                localStorage.setItem('unlocked', 'true');
+                
+                // Redirect back to main page or analysis results
+                statusMessage.textContent = 'Payment confirmed! Redirecting...';
+                
+                setTimeout(() => {
+                    window.location.href = 'https://clearlease-frontend.vercel.app/';
+                }, 1000);
             } catch (error) {
                 console.error('Activate paid error:', error);
                 statusMessage.textContent = 'Error processing payment. Please contact support.';

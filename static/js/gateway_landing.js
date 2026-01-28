@@ -411,8 +411,8 @@ function showUpgradeCTA() {
             loginSection.style.display = 'block';
         } else {
             // Logged in, redirect to Gumroad payment page with return URL
-            // Replace with actual Gumroad URL that redirects back to paid-success
-            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/paid-success';
+            // Replace with actual Gumroad URL that redirects back to payment/success
+            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/payment/success';
         }
     });
     
@@ -590,8 +590,8 @@ function addUpgradePromptToResults() {
             loginSection.style.display = 'block';
         } else {
             // Logged in, redirect to Gumroad payment page with return URL
-            // Replace with actual Gumroad URL that redirects back to paid-success
-            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/paid-success';
+            // Replace with actual Gumroad URL that redirects back to payment/success
+            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/payment/success';
         }
     });
     
