@@ -407,25 +407,21 @@ async function handleAnalyze() {
         return;
     }
 
-    // Check if user is logged in
+    // Get user info if logged in
     const token = localStorage.getItem('token');
-    
-    if (!token) {
-        // Not logged in - show login section
-        loginSection.style.display = 'block';
-        showError('Please login first to analyze your lease agreement.');
-        return;
-    }
-    
-    // Get user info to check login status
     let userData;
-    try {
-        userData = await fetchUserInfo();
-        console.log('User info:', userData);
-    } catch (error) {
-        console.error('Error fetching user info:', error);
-        // Continue with analysis even if user info fetch fails
-        // Analysis should always be available
+    
+    if (token) {
+        try {
+            userData = await fetchUserInfo();
+            console.log('User info:', userData);
+        } catch (error) {
+            console.error('Error fetching user info:', error);
+            // Continue with analysis even if user info fetch fails
+            // Analysis should always be available
+        }
+    } else {
+        console.log('User not logged in, proceeding with free analysis');
     }
     
     // Reset UI
@@ -434,12 +430,19 @@ async function handleAnalyze() {
     analyzeButton.disabled = true;
 
     try {
+        // Prepare headers
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        // Add authorization header if token exists
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: headers,
             body: JSON.stringify({
                 contract_text: leaseText
             })
