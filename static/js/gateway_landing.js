@@ -302,8 +302,9 @@ async function fetchUserInfo() {
     console.log('Fetch user info response data:', data);
     
     if (data.success) {
-        console.log('User info fetched successfully:', data.data.user);
-        return data.data.user;
+        console.log('User info fetched successfully:', data.data);
+        console.log('User paid status:', data.data.paid);
+        return data.data;
     } else {
         console.error('Failed to fetch user info:', data.message);
         throw new Error('Failed to fetch user info');
