@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success - ClearLease</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #28a745;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .login-section {
+            margin-top: 20px;
+        }
+        .email-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .login-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .login-button:hover {
+            background-color: #0069d9;
+        }
+        .login-message {
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Payment Processing</h1>
+        <p id="statusMessage">Checking your payment status...</p>
+        <div id="loadingIndicator" class="loading"></div>
+        
+        <!-- Login Section (hidden by default) -->
+        <div id="loginSection" class="login-section" style="display: none;">
+            <h2>Please login to complete your purchase</h2>
+            <p>We need to link your payment to your account.</p>
+            <input 
+                type="email" 
+                id="emailInput" 
+                class="email-input" 
+                placeholder="Enter your email address"
+            >
+            <input 
+                type="password" 
+                id="passwordInput" 
+                class="email-input" 
+                placeholder="Enter your password"
+            >
+            <button id="loginButton" class="login-button">Login</button>
+            <button id="registerButton" class="login-button" style="margin-top: 10px;">Register</button>
+            <p id="loginMessage" class="login-message"></p>
+        </div>
+    </div>
+    <script>
+        // API Configuration
+        const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
+        const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
+        const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
+        const API_ACTIVATE_PAID_ENDPOINT = `${BACKEND_BASE_URL}/api/activate-paid`;
+        const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
+        
+        // DOM Elements
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const loginSection = document.getElementById('loginSection');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginButton = document.getElementById('loginButton');
+        const registerButton = document.getElementById('registerButton');
+        const loginMessage = document.getElementById('loginMessage');
+        
+        // Event Listeners
+        loginButton.addEventListener('click', handleLogin);
+        registerButton.addEventListener('click', handleRegister);
+        
+        // Handle Enter key in inputs
+        emailInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+        
+        passwordInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkLoginStatus();
+        });
+        
+        /**
+         * Check login status
+         */
+        async function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                // Not logged in, show login section
+                showLoginSection();
+                return;
+            }
+            
+            // Logged in, validate token
+            try {
+                const userData = await fetchUserInfo(token);
+                if (userData) {
+                    // Token valid, activate paid status
+                    await activatePaidStatus(token);
+                } else {
+                    // Token invalid, show login section
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    showLoginSection();
+                }
+            } catch (error) {
+                console.error('Login status check error:', error);
+                // Token invalid, show login section
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                showLoginSection();
+            }
+        }
+        
+        /**
+         * Show login section
+         */
+        function showLoginSection() {
+            statusMessage.textContent = 'Please login to complete your purchase';
+            loadingIndicator.style.display = 'none';
+            loginSection.style.display = 'block';
+        }
+        
+        /**
+         * Handle login
+         */
+        async function handleLogin() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!email || !password) {
+                loginMessage.textContent = 'Please enter both email and password';
+                return;
+            }
+            
+            loginButton.disabled = true;
+            registerButton.disabled = true;
+            loginMessage.textContent = 'Logging in...';
+            
+            try {
+                const response = await fetch(API_LOGIN_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Save token and user info
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    
+                    // Activate paid status
+                    await activatePaidStatus(data.data.token);
+                } else {
+                    loginMessage.textContent = 'Login failed: ' + (data.message || 'Invalid credentials');
+                    loginButton.disabled = false;
+                    registerButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginMessage.textContent = 'Error logging in. Please try again.';
+                loginButton.disabled = false;
+                registerButton.disabled = false;
+            }
+        }
+        
+        /**
+         * Handle register
+         */
+        async function handleRegister() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!email || !password) {
+                loginMessage.textContent = 'Please enter both email and password';
+                return;
+            }
+            
+            loginButton.disabled = true;
+            registerButton.disabled = true;
+            loginMessage.textContent = 'Registering...';
+            
+            try {
+                const response = await fetch(API_REGISTER_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Save token and user info
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    
+                    // Activate paid status
+                    await activatePaidStatus(data.data.token);
+                } else {
+                    loginMessage.textContent = 'Registration failed: ' + (data.message || 'Invalid information');
+                    loginButton.disabled = false;
+                    registerButton.disabled = false;
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                loginMessage.textContent = 'Error registering. Please try again.';
+                loginButton.disabled = false;
+                registerButton.disabled = false;
+            }
+        }
+        
+        /**
+         * Activate paid status
+         */
+        async function activatePaidStatus(token) {
+            statusMessage.textContent = 'Activating your paid status...';
+            loadingIndicator.style.display = 'block';
+            loginSection.style.display = 'none';
+            
+            try {
+                // Call activate-paid endpoint
+                const activateResponse = await fetch(API_ACTIVATE_PAID_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const activateData = await activateResponse.json();
+                
+                if (activateData.success) {
+                    // Refresh user info
+                    const userData = await fetchUserInfo(token);
+                    if (userData) {
+                        // Update user info in localStorage
+                        localStorage.setItem('user', JSON.stringify(userData));
+                        
+                        // Set unlock status for confirmation message
+                        localStorage.setItem('unlocked', 'true');
+                        
+                        // Redirect back to main page or analysis results
+                        statusMessage.textContent = 'Payment confirmed! Redirecting...';
+                        
+                        setTimeout(() => {
+                            window.location.href = 'https://clearlease-frontend.vercel.app/';
+                        }, 1000);
+                    } else {
+                        throw new Error('Failed to refresh user info');
+                    }
+                } else {
+                    throw new Error('Failed to activate paid status');
+                }
+            } catch (error) {
+                console.error('Activate paid error:', error);
+                statusMessage.textContent = 'Error processing payment. Please contact support.';
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        /**
+         * Fetch user info from API
+         */
+        async function fetchUserInfo(token) {
+            const response = await fetch(API_ME_ENDPOINT, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch user info');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                return data.data.user;
+            } else {
+                throw new Error('Failed to fetch user info');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 // Handles API communication and UI updates
 
 // API Configuration
-const BACKEND_BASE_URL = 'http://localhost:8000';
+const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
 const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
 const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
 const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
@@ -298,6 +298,7 @@ function handleLogout() {
     // Clear token and user info
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('analysis_id');
     
     // Update UI
     clearUserInfo();
@@ -306,7 +307,7 @@ function handleLogout() {
     explicitLoginButton.style.display = 'block';
     
     // Redirect to login page (home)
-    window.location.href = '/';
+    window.location.href = 'https://clearlease-frontend.vercel.app/';
 }
 
 /**
@@ -363,7 +364,7 @@ async function fetchUserInfo() {
 function checkUserStatusAndRedirect(user) {
     if (!user) {
         // Not logged in, show login page
-        window.location.href = '/';
+        window.location.href = 'https://clearlease-frontend.vercel.app/';
         return;
     }
     
@@ -409,9 +410,9 @@ function showUpgradeCTA() {
             // Not logged in, show login section
             loginSection.style.display = 'block';
         } else {
-            // Logged in, redirect to Gumroad payment page
-            // Replace with actual Gumroad URL
-            window.location.href = 'https://gumroad.com/l/clearlease';
+            // Logged in, redirect to Gumroad payment page with return URL
+            // Replace with actual Gumroad URL that redirects back to paid-success
+            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/paid-success';
         }
     });
     
@@ -588,9 +589,9 @@ function addUpgradePromptToResults() {
             // Not logged in, show login section
             loginSection.style.display = 'block';
         } else {
-            // Logged in, redirect to Gumroad payment page
-            // Replace with actual Gumroad URL
-            window.location.href = 'https://gumroad.com/l/clearlease';
+            // Logged in, redirect to Gumroad payment page with return URL
+            // Replace with actual Gumroad URL that redirects back to paid-success
+            window.location.href = 'https://gumroad.com/l/clearlease?return=https://clearlease-frontend.vercel.app/paid-success';
         }
     });
     
