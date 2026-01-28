@@ -261,8 +261,80 @@ function updateUserInfo(user) {
         userEmail.textContent = user.email;
         userInfo.style.display = 'block';
         loginSection.style.display = 'none';
+        
+        // Add dev reset button if in development environment
+        addDevResetButton();
     } else {
         clearUserInfo();
+    }
+}
+
+/**
+ * Add dev reset button for Pro status
+ */
+function addDevResetButton() {
+    // Check if button already exists
+    if (document.getElementById('devResetButton')) {
+        return;
+    }
+    
+    // Create reset button
+    const resetButton = document.createElement('button');
+    resetButton.id = 'devResetButton';
+    resetButton.textContent = 'Reset Pro Status (Dev Only)';
+    resetButton.style.cssText = `
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        width: 100%;
+    `;
+    
+    // Add click event listener
+    resetButton.addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please login first');
+            return;
+        }
+        
+        try {
+            // Call reset-paid endpoint
+            const response = await fetch(`${BACKEND_BASE_URL}/api/dev/reset-paid`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            console.log('Reset Pro status response:', data);
+            
+            if (data.success) {
+                // Reset successful, refresh user info
+                const userData = await fetchUserInfo();
+                if (userData) {
+                    updateUserInfo(userData);
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    alert('Pro status reset successfully');
+                }
+            } else {
+                alert('Failed to reset Pro status: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error resetting Pro status:', error);
+            alert('Error resetting Pro status: ' + error.message);
+        }
+    });
+    
+    // Add button to user info section
+    if (userInfo) {
+        userInfo.appendChild(resetButton);
     }
 }
 
