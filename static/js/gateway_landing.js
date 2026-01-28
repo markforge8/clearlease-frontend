@@ -136,6 +136,21 @@ function checkUnlockStatus() {
         showUnlockConfirmation();
         // Clear unlock status
         localStorage.removeItem('unlocked');
+        
+        // Force a refresh of user info to get the latest paid status
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetchUserInfo().then(userData => {
+                if (userData) {
+                    // Update user info in localStorage
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    // Update UI
+                    updateUserInfo(userData);
+                }
+            }).catch(error => {
+                console.error('Error refreshing user info:', error);
+            });
+        }
     }
 }
 
