@@ -7,52 +7,230 @@
     <link rel="stylesheet" href="/static/css/gateway_landing.css">
     
     <style>
-        .login-section {
-            background-color: #f8f9fa;
-            padding: 2rem;
+        /* Navigation Bar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e5e5;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-logo {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+        
+        .navbar-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .navbar-link {
+            color: #666666;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: color 0.2s ease;
+        }
+        
+        .navbar-link:hover {
+            color: #1a1a1a;
+        }
+        
+        .navbar-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .navbar-button:hover {
+            background-color: #0069d9;
+        }
+        
+        .navbar-button-outline {
+            background-color: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        
+        .navbar-button-outline:hover {
+            background-color: #f0f8ff;
+        }
+        
+        /* Auth Modal */
+        .auth-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .auth-modal {
+            background-color: #ffffff;
             border-radius: 8px;
-            margin-bottom: 2rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+        
+        .auth-modal-header {
             text-align: center;
+            margin-bottom: 2rem;
         }
         
-        .login-form {
-            margin: 1.5rem 0;
+        .auth-modal-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
         }
         
-        .email-input {
+        .auth-modal-subtitle {
+            font-size: 1rem;
+            color: #666666;
+        }
+        
+        .auth-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999999;
+        }
+        
+        .auth-modal-close:hover {
+            color: #1a1a1a;
+        }
+        
+        .auth-form {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 4px;
-            margin-bottom: 1rem;
             font-size: 1rem;
         }
         
-        .login-button {
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        .auth-button {
+            width: 100%;
+            padding: 0.75rem;
             background-color: #007bff;
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
             border-radius: 4px;
             font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
+            transition: background-color 0.2s ease;
         }
         
-        .login-button:hover {
+        .auth-button:hover {
             background-color: #0069d9;
         }
         
-        .login-message {
-            margin-top: 1rem;
-            color: #666;
+        .auth-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
         
+        .auth-links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .auth-link {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+        
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+        
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: #e5e5e5;
+        }
+        
+        .auth-divider-text {
+            padding: 0 1rem;
+            font-size: 0.875rem;
+            color: #999999;
+        }
+        
+        .auth-message {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #666666;
+        }
+        
+        .auth-message.error {
+            color: #dc3545;
+        }
+        
+        /* User Info Section */
         .user-info {
             position: absolute;
-            top: 1rem;
+            top: 5rem;
             right: 1rem;
             text-align: right;
-            background-color: #f8f9fa;
+            background-color: #f8f8f8;
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -105,9 +283,83 @@
         .upgrade-button:hover {
             background-color: #e0a800;
         }
+        
+        /* Save Analysis Section */
+        .save-analysis-section {
+            background-color: #f8f8f8;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+            border: 1px solid #e5e5e5;
+        }
+        
+        .save-analysis-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+        
+        .save-analysis-description {
+            font-size: 1rem;
+            color: #666666;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-logo">ClearLease</a>
+        <div class="navbar-links">
+            <a href="/" class="navbar-link">Home</a>
+            <a href="/analyze" class="navbar-link">Analyze</a>
+            <button id="signUpButton" class="navbar-button navbar-button-outline">Sign Up</button>
+            <button id="signInButton" class="navbar-button">Sign In</button>
+        </div>
+    </nav>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal-overlay" style="display: none;">
+        <div class="auth-modal">
+            <div class="auth-modal-header">
+                <h2 class="auth-modal-title">Sign In</h2>
+                <p class="auth-modal-subtitle">Access your account to save analysis history</p>
+            </div>
+            <button id="authModalClose" class="auth-modal-close">×</button>
+            <div class="auth-form">
+                <div class="form-group">
+                    <label for="authEmail" class="form-label">Email</label>
+                    <input 
+                        type="email" 
+                        id="authEmail" 
+                        class="form-input" 
+                        placeholder="Enter your email address"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="authPassword" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="authPassword" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                    >
+                </div>
+                <button id="authLoginButton" class="auth-button">Sign In</button>
+                <div class="auth-links">
+                    <a href="#" id="authForgotPassword" class="auth-link">Forgot password?</a>
+                </div>
+                <div class="auth-divider">
+                    <span class="auth-divider-text">or</span>
+                </div>
+                <button id="authRegisterButton" class="auth-button navbar-button-outline">Create Account</button>
+            </div>
+            <p id="authMessage" class="auth-message"></p>
+        </div>
+    </div>
+
     <main class="container">
         <div class="content">
             <!-- User Info Section -->
@@ -120,29 +372,13 @@
             <header class="header">
                 <h1 class="headline">Lease analysis</h1>
                 <p class="subtitle">Clauses that may affect your costs or responsibilities.</p>
-                <button id="explicitLoginButton" class="login-button" style="margin-top: 1rem; display: none;">Sign in to save your analysis (optional)</button>
             </header>
 
-            <!-- Login Section -->
-            <section id="loginSection" class="login-section" style="display: none;">
-                <h2>Login to Save Your Analysis</h2>
-                <div class="login-form">
-                    <input 
-                        type="email" 
-                        id="emailInput" 
-                        class="email-input" 
-                        placeholder="Enter your email address"
-                    >
-                    <input 
-                        type="password" 
-                        id="passwordInput" 
-                        class="email-input" 
-                        placeholder="Enter your password"
-                    >
-                    <button id="loginButton" class="login-button">Login</button>
-                    <button id="registerButton" class="login-button" style="margin-top: 10px;">Register</button>
-                </div>
-                <p id="loginMessage" class="login-message"></p>
+            <!-- Save Analysis Section -->
+            <section id="saveAnalysisSection" class="save-analysis-section" style="display: none;">
+                <h2 class="save-analysis-title">Save your analysis history</h2>
+                <p class="save-analysis-description">Sign in to keep track of your past analyses and access them anytime.</p>
+                <button id="saveAnalysisButton" class="navbar-button">Sign In to Save</button>
             </section>
 
             <!-- Input Section -->

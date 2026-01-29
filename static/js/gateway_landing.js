@@ -18,26 +18,59 @@ const loadingState = document.getElementById('loadingState');
 const errorState = document.getElementById('errorState');
 const errorMessage = document.getElementById('errorMessage');
 
-// Login Elements
-const loginSection = document.getElementById('loginSection');
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
-const loginButton = document.getElementById('loginButton');
-const registerButton = document.getElementById('registerButton');
-const loginMessage = document.getElementById('loginMessage');
+// Navigation and Auth Elements
+const signInButton = document.getElementById('signInButton');
+const signUpButton = document.getElementById('signUpButton');
+const authModal = document.getElementById('authModal');
+const authModalClose = document.getElementById('authModalClose');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authLoginButton = document.getElementById('authLoginButton');
+const authRegisterButton = document.getElementById('authRegisterButton');
+const authMessage = document.getElementById('authMessage');
+const saveAnalysisSection = document.getElementById('saveAnalysisSection');
+const saveAnalysisButton = document.getElementById('saveAnalysisButton');
 const userInfo = document.getElementById('userInfo');
 const userEmail = document.getElementById('userEmail');
 const logoutButton = document.getElementById('logoutButton');
-const explicitLoginButton = document.getElementById('explicitLoginButton');
 
 // Event Listeners
 analyzeButton.addEventListener('click', handleAnalyze);
-loginButton.addEventListener('click', handleLogin);
-registerButton.addEventListener('click', handleRegister);
 logoutButton.addEventListener('click', handleLogout);
-explicitLoginButton.addEventListener('click', () => {
-    loginSection.style.display = 'block';
-});
+
+// Navigation and Modal Events
+if (signInButton) signInButton.addEventListener('click', openAuthModal);
+if (signUpButton) signUpButton.addEventListener('click', openAuthModal);
+if (authModalClose) authModalClose.addEventListener('click', closeAuthModal);
+if (authLoginButton) authLoginButton.addEventListener('click', handleLogin);
+if (authRegisterButton) authRegisterButton.addEventListener('click', handleRegister);
+if (saveAnalysisButton) saveAnalysisButton.addEventListener('click', openAuthModal);
+
+// Close modal when clicking outside
+if (authModal) {
+    authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) {
+            closeAuthModal();
+        }
+    });
+}
+
+// Handle Enter key in auth inputs
+if (authEmail) {
+    authEmail.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+}
+
+if (authPassword) {
+    authPassword.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+}
 
 // Handle Enter key in textarea (Ctrl+Enter or Cmd+Enter)
 leaseTextarea.addEventListener('keydown', (e) => {
@@ -60,6 +93,25 @@ passwordInput.addEventListener('keydown', (e) => {
     }
 });
 
+// Auth Modal Functions
+function openAuthModal() {
+    if (authModal) {
+        authModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeAuthModal() {
+    if (authModal) {
+        authModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        // Clear form
+        if (authEmail) authEmail.value = '';
+        if (authPassword) authPassword.value = '';
+        if (authMessage) authMessage.textContent = '';
+    }
+}
+
 // Initialize app
 window.addEventListener('DOMContentLoaded', async () => {
     // Check if user is already logged in
@@ -70,8 +122,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             const userData = await fetchUserInfo();
             if (userData) {
                 updateUserInfo(userData);
-                // Hide login button when signed in
-                explicitLoginButton.style.display = 'none';
+                // Update navigation
+                updateNavigation(userData);
                 // Check user status and redirect if needed
                 checkUserStatusAndRedirect(userData);
                 // Check for recoverable analysis
@@ -81,16 +133,35 @@ window.addEventListener('DOMContentLoaded', async () => {
             // Token invalid, clear it
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // Show login button when signed out
-            explicitLoginButton.style.display = 'block';
+            // Update navigation
+            updateNavigation(null);
         }
     } else {
-        // Show login button when signed out
-        explicitLoginButton.style.display = 'block';
+        // Update navigation
+        updateNavigation(null);
+        // Show save analysis section
+        if (saveAnalysisSection) {
+            saveAnalysisSection.style.display = 'block';
+        }
     }
     
 
 });
+
+// Update navigation based on user status
+function updateNavigation(user) {
+    if (user) {
+        // Logged in
+        if (signInButton) signInButton.style.display = 'none';
+        if (signUpButton) signUpButton.style.display = 'none';
+        if (saveAnalysisSection) saveAnalysisSection.style.display = 'none';
+    } else {
+        // Not logged in
+        if (signInButton) signInButton.style.display = 'inline-block';
+        if (signUpButton) signUpButton.style.display = 'inline-block';
+        if (saveAnalysisSection) saveAnalysisSection.style.display = 'block';
+    }
+}
 
 /**
  * Check for recoverable analysis from backend
@@ -132,17 +203,19 @@ async function checkForRecoverableAnalysis() {
  * Handle login
  */
 async function handleLogin() {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+    const email = authEmail.value.trim();
+    const password = authPassword.value.trim();
     
     if (!email || !password) {
-        loginMessage.textContent = 'Please enter both email and password';
+        authMessage.textContent = 'Please enter both email and password';
+        authMessage.classList.add('error');
         return;
     }
     
-    loginButton.disabled = true;
-    registerButton.disabled = true;
-    loginMessage.textContent = 'Logging in...';
+    authLoginButton.disabled = true;
+    authRegisterButton.disabled = true;
+    authMessage.textContent = 'Logging in...';
+    authMessage.classList.remove('error');
     
     try {
         const response = await fetch(API_LOGIN_ENDPOINT, {
@@ -162,22 +235,25 @@ async function handleLogin() {
             
             // Update UI
             updateUserInfo(data.data.user);
-            loginMessage.textContent = 'Login successful!';
+            updateNavigation(data.data.user);
+            authMessage.textContent = 'Login successful!';
             
-            // Hide login button
-            explicitLoginButton.style.display = 'none';
+            // Close modal
+            closeAuthModal();
             
             // Redirect based on paid status
             checkUserStatusAndRedirect(data.data.user);
         } else {
-            loginMessage.textContent = 'Login failed: ' + (data.message || 'Invalid credentials');
+            authMessage.textContent = 'Login failed: ' + (data.message || 'Invalid credentials');
+            authMessage.classList.add('error');
         }
     } catch (error) {
         console.error('Login error:', error);
-        loginMessage.textContent = 'Error logging in. Please try again.';
+        authMessage.textContent = 'Error logging in. Please try again.';
+        authMessage.classList.add('error');
     } finally {
-        loginButton.disabled = false;
-        registerButton.disabled = false;
+        authLoginButton.disabled = false;
+        authRegisterButton.disabled = false;
     }
 }
 
@@ -185,17 +261,19 @@ async function handleLogin() {
  * Handle register
  */
 async function handleRegister() {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+    const email = authEmail.value.trim();
+    const password = authPassword.value.trim();
     
     if (!email || !password) {
-        loginMessage.textContent = 'Please enter both email and password';
+        authMessage.textContent = 'Please enter both email and password';
+        authMessage.classList.add('error');
         return;
     }
     
-    loginButton.disabled = true;
-    registerButton.disabled = true;
-    loginMessage.textContent = 'Registering...';
+    authLoginButton.disabled = true;
+    authRegisterButton.disabled = true;
+    authMessage.textContent = 'Registering...';
+    authMessage.classList.remove('error');
     
     try {
         const response = await fetch(API_REGISTER_ENDPOINT, {
@@ -215,22 +293,25 @@ async function handleRegister() {
             
             // Update UI
             updateUserInfo(data.data.user);
-            loginMessage.textContent = 'Registration successful!';
+            updateNavigation(data.data.user);
+            authMessage.textContent = 'Registration successful!';
             
-            // Hide login button
-            explicitLoginButton.style.display = 'none';
+            // Close modal
+            closeAuthModal();
             
             // Redirect based on paid status
             checkUserStatusAndRedirect(data.data.user);
         } else {
-            loginMessage.textContent = 'Registration failed: ' + (data.message || 'Invalid information');
+            authMessage.textContent = 'Registration failed: ' + (data.message || 'Invalid information');
+            authMessage.classList.add('error');
         }
     } catch (error) {
         console.error('Register error:', error);
-        loginMessage.textContent = 'Error registering. Please try again.';
+        authMessage.textContent = 'Error registering. Please try again.';
+        authMessage.classList.add('error');
     } finally {
-        loginButton.disabled = false;
-        registerButton.disabled = false;
+        authLoginButton.disabled = false;
+        authRegisterButton.disabled = false;
     }
 }
 
@@ -245,9 +326,7 @@ function handleLogout() {
     
     // Update UI
     clearUserInfo();
-    
-    // Show login button
-    explicitLoginButton.style.display = 'block';
+    updateNavigation(null);
     
     // Redirect to login page (home)
     window.location.href = '/';
