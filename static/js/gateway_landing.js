@@ -5,6 +5,8 @@
 const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
 const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
 const API_INGEST_ENDPOINT = `${BACKEND_BASE_URL}/ingest`;
+const API_HISTORY_ENDPOINT = `${BACKEND_BASE_URL}/history`;
+const API_EXPORT_PDF_ENDPOINT = `${BACKEND_BASE_URL}/export/pdf`;
 const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
 const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
 const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
@@ -266,8 +268,106 @@ function updateUserInfo(user) {
         
         // Add dev reset button if in development environment
         addDevResetButton();
+        
+        // Add history button
+        addHistoryButton();
     } else {
         clearUserInfo();
+    }
+}
+
+/**
+ * Add history button to user info section
+ */
+function addHistoryButton() {
+    // Check if button already exists
+    if (document.getElementById('historyButton')) {
+        return;
+    }
+    
+    // Create history button
+    const historyButton = document.createElement('button');
+    historyButton.id = 'historyButton';
+    historyButton.textContent = 'Saved Analyses';
+    historyButton.style.cssText = `
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        width: 100%;
+    `;
+    
+    // Add click event listener
+    historyButton.addEventListener('click', async () => {
+        try {
+            updateLoadingMessage('Loading saved analyses...');
+            const history = await fetchHistory();
+            toggleHistorySection();
+            displayHistory(history);
+        } catch (error) {
+            console.error('Error fetching history:', error);
+            showError(`Failed to load history: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    });
+    
+    // Add button to user info section
+    if (userInfo) {
+        userInfo.appendChild(historyButton);
+    }
+}
+
+/**
+ * Toggle history section visibility
+ */
+function toggleHistorySection() {
+    const historySection = document.getElementById('historySection');
+    if (!historySection) {
+        // Create history section if it doesn't exist
+        const historySection = document.createElement('div');
+        historySection.id = 'historySection';
+        historySection.className = 'history-section';
+        historySection.style.cssText = `
+            margin-top: 2rem;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: block;
+        `;
+        
+        const historyHeader = document.createElement('h2');
+        historyHeader.textContent = 'Saved Analyses';
+        historyHeader.style.cssText = `
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 400;
+        `;
+        
+        const historyExplanation = document.createElement('p');
+        historyExplanation.style.cssText = `
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            color: #666666;
+            line-height: 1.5;
+        `;
+        historyExplanation.textContent = 'Your past analyses are saved automatically when you\'re logged in.';
+        
+        historySection.appendChild(historyHeader);
+        historySection.appendChild(historyExplanation);
+        
+        // Insert after input section
+        const inputSection = document.querySelector('.input-section');
+        if (inputSection) {
+            inputSection.parentNode.insertBefore(historySection, inputSection.nextSibling);
+        }
+    } else {
+        // Toggle visibility
+        historySection.style.display = historySection.style.display === 'none' ? 'block' : 'block';
     }
 }
 
@@ -665,6 +765,187 @@ function addSourceTypeHint(sourceType) {
 }
 
 /**
+ * Fetch analysis history from the API
+ */
+async function fetchHistory() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        throw new Error('User not logged in');
+    }
+    
+    const response = await fetch(API_HISTORY_ENDPOINT, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch history: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.history || [];
+}
+
+/**
+ * Display analysis history
+ */
+function displayHistory(history) {
+    const historySection = document.getElementById('historySection');
+    if (!historySection) {
+        return;
+    }
+    
+    if (history.length === 0) {
+        historySection.innerHTML = '<p>No analysis history found.</p>';
+        return;
+    }
+    
+    const historyHTML = history.map(item => {
+        const date = new Date(item.created_at).toLocaleString();
+        return `
+            <div class="history-item">
+                <div class="history-item-header">
+                    <div class="history-item-date">${date}</div>
+                    <div class="history-item-risk risk-${item.risk_level}">${item.risk_level.charAt(0).toUpperCase() + item.risk_level.slice(1)}</div>
+                </div>
+                <div class="history-item-summary">${item.summary}</div>
+                <div class="history-item-actions">
+                    <button class="history-item-button" onclick="loadHistoryItem('${item.id}')">View Details</button>
+                    <button class="history-item-button" onclick="exportToPDF('${item.id}')">Export PDF</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    historySection.innerHTML = historyHTML;
+}
+
+/**
+ * Load a specific history item
+ */
+async function loadHistoryItem(analysisId) {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        showError('Please log in to view history items');
+        return;
+    }
+    
+    try {
+        updateLoadingMessage('Loading saved analysis...');
+        
+        const response = await fetch(`${API_ENDPOINT}/${analysisId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load analysis: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        // Add flag to indicate this is a saved analysis
+        data.isSavedAnalysis = true;
+        displayAnalysisResults(data);
+    } catch (error) {
+        console.error('Error loading history item:', error);
+        showError(`Failed to load analysis: ${error.message}`);
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Add saved analysis indication to results section
+ */
+function addSavedAnalysisIndication() {
+    const resultsSection = document.getElementById('resultsSection');
+    if (!resultsSection) {
+        return;
+    }
+    
+    // Check if indication already exists
+    if (document.getElementById('savedAnalysisIndication')) {
+        return;
+    }
+    
+    // Create indication element
+    const indication = document.createElement('div');
+    indication.id = 'savedAnalysisIndication';
+    indication.style.cssText = `
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #1976d2;
+        font-weight: 500;
+    `;
+    indication.textContent = 'Viewing saved analysis (no new analysis was run)';
+    
+    // Insert at the top of results section
+    if (resultsSection.firstChild) {
+        resultsSection.insertBefore(indication, resultsSection.firstChild);
+    } else {
+        resultsSection.appendChild(indication);
+    }
+}
+
+/**
+ * Export analysis to PDF
+ */
+async function exportToPDF(analysisId) {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        showError('Please log in to export to PDF');
+        return;
+    }
+    
+    try {
+        updateLoadingMessage('Generating PDF...');
+        
+        const response = await fetch(`${API_EXPORT_PDF_ENDPOINT}?analysis_id=${analysisId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            // Handle 401/403 errors (login expired)
+            if (response.status === 401 || response.status === 403) {
+                showError('Please log in again to export PDF.');
+                return;
+            }
+            // Handle other errors
+            showError('Failed to export PDF. Please try again.');
+            return;
+        }
+        
+        // Handle PDF download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clearlease-analysis-${analysisId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        console.error('Error exporting to PDF:', error);
+        // Handle network errors
+        showError('Failed to export PDF. Please try again.');
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
  * Render basic analysis
  */
 function renderBasicAnalysis(basicResult) {
@@ -743,6 +1024,17 @@ function renderUpgradeCTA() {
 function displayAnalysisResults(data) {
     // Hide loading and error states
     hideAllSections();
+
+    // Check if this is a saved analysis
+    if (data.isSavedAnalysis) {
+        addSavedAnalysisIndication();
+    } else {
+        // Remove indication if it exists
+        const indication = document.getElementById('savedAnalysisIndication');
+        if (indication) {
+            indication.remove();
+        }
+    }
 
     // Always render basic analysis
     if (data.basic_result) {

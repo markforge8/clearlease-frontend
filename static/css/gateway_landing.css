@@ -144,6 +144,136 @@ body {
     margin-top: 0.5rem;
 }
 
+/* History Section */
+.history-section {
+    margin: 2rem 0;
+    padding: 2rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.history-section h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #1a1a1a;
+}
+
+.history-item {
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-item:hover {
+    border-color: #1a1a1a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.history-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.history-item-date {
+    font-size: 0.875rem;
+    color: #666666;
+}
+
+.history-item-risk {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.history-item-risk.risk-high {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.history-item-risk.risk-medium {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.history-item-risk.risk-low {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.history-item-summary {
+    font-size: 1rem;
+    color: #333333;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.history-item-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.history-item-button {
+    background-color: #f8f9fa;
+    color: #333333;
+    border: 1px solid #e5e5e5;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-item-button:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.history-item-button:first-child {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.history-item-button:first-child:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+/* Responsive Design for History */
+@media (max-width: 640px) {
+    .history-section {
+        padding: 1.5rem;
+    }
+    
+    .history-item {
+        padding: 1.25rem;
+    }
+    
+    .history-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .history-item-actions {
+        flex-direction: column;
+    }
+    
+    .history-item-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
 /* Results Section */
 .results-section {
     margin-top: 4rem;
