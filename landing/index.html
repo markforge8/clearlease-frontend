@@ -292,6 +292,188 @@
             color: #666666;
         }
         
+        /* Capabilities Section */
+        .capabilities-section {
+            padding: 6rem 2rem;
+            background-color: #ffffff;
+        }
+        
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .capability-card {
+            text-align: center;
+            padding: 2rem;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e5e5e5;
+        }
+        
+        .capability-title {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+        
+        .capability-description {
+            font-size: 0.95rem;
+            color: #666666;
+            line-height: 1.6;
+        }
+        
+        /* FAQ Section */
+        .faq-section {
+            padding: 6rem 2rem;
+            background-color: #fafafa;
+        }
+        
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .faq-item {
+            margin-bottom: 1rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            width: 100%;
+            padding: 1.25rem;
+            background-color: #ffffff;
+            border: none;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .faq-question:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .faq-answer {
+            padding: 0 1.25rem;
+            background-color: #ffffff;
+            color: #666666;
+            line-height: 1.6;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .faq-answer.active {
+            padding: 0 1.25rem 1.25rem;
+            max-height: 200px;
+        }
+        
+        .faq-icon {
+            font-size: 1.25rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .faq-icon.active {
+            transform: rotate(180deg);
+        }
+        
+        /* Comparison Table Section */
+        .comparison-section {
+            padding: 4rem 2rem;
+            background-color: #ffffff;
+        }
+        
+        .comparison-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .comparison-table th {
+            background-color: #fafafa;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        
+        .comparison-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Dark Weight Section */
+        .dark-weight-section {
+            padding: 6rem 2rem;
+            background-color: #f0f0f0;
+        }
+        
+        .dark-weight-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .dark-weight-title {
+            font-size: 1.75rem;
+            font-weight: 400;
+            color: #1a1a1a;
+            margin-bottom: 1.5rem;
+        }
+        
+        .dark-weight-subtitle {
+            font-size: 1.125rem;
+            color: #666666;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        /* Hesitation CTA Section */
+        .hesitation-cta-section {
+            padding: 4rem 2rem;
+            background-color: #ffffff;
+            text-align: center;
+        }
+        
+        .hesitation-cta-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .hesitation-cta-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+        
+        .hesitation-cta-subtitle {
+            font-size: 1.125rem;
+            color: #666666;
+            margin-bottom: 2rem;
+        }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
             .hero-section {
@@ -318,10 +500,17 @@
             
             .features-section,
             .before-after-section,
-            .users-section,
             .testimonials-section,
-            .final-cta-section {
+            .final-cta-section,
+            .capabilities-section,
+            .faq-section,
+            .dark-weight-section {
                 padding: 4rem 1rem;
+            }
+            
+            .comparison-section,
+            .hesitation-cta-section {
+                padding: 3rem 1rem;
             }
             
             .before-after-container {
@@ -335,6 +524,23 @@
             
             .final-cta-title {
                 font-size: 1.75rem;
+            }
+            
+            .dark-weight-title {
+                font-size: 1.5rem;
+            }
+            
+            .capabilities-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-table {
+                font-size: 0.9rem;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 0.75rem;
             }
         }
     </style>
@@ -405,7 +611,135 @@
         </div>
     </section>
 
+    <!-- Capabilities Section -->
+    <section class="capabilities-section">
+        <div class="landing-container">
+            <h2 class="section-title">How ClearLease works</h2>
+            <div class="capabilities-grid">
+                <div class="capability-card">
+                    <h3 class="capability-title">Clause review</h3>
+                    <p class="capability-description">Identify terms that may affect your costs or responsibilities.</p>
+                </div>
+                <div class="capability-card">
+                    <h3 class="capability-title">Plain-English explanations</h3>
+                    <p class="capability-description">Understand what each clause means without legal jargon.</p>
+                </div>
+                <div class="capability-card">
+                    <h3 class="capability-title">Cost-related flags</h3>
+                    <p class="capability-description">Highlight fees and penalties that may apply under certain conditions.</p>
+                </div>
+                <div class="capability-card">
+                    <h3 class="capability-title">Fast & private analysis</h3>
+                    <p class="capability-description">Results in under a minute. Files processed temporarily.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- Comparison Table Section -->
+    <section class="comparison-section">
+        <div class="landing-container">
+            <h2 class="section-title">Review options</h2>
+            <div class="comparison-container">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Time</th>
+                            <th>Cost</th>
+                            <th>Clarity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Reading yourself</td>
+                            <td>High</td>
+                            <td>Free</td>
+                            <td>Low</td>
+                        </tr>
+                        <tr>
+                            <td>Hiring a lawyer</td>
+                            <td>High</td>
+                            <td>$$$</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td>ClearLease</td>
+                            <td>Low</td>
+                            <td>Low</td>
+                            <td>Medium–High</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="landing-container">
+            <h2 class="section-title">Frequently asked questions</h2>
+            <div class="faq-container">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Is ClearLease a replacement for a lawyer?
+                        <span class="faq-icon">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        No. ClearLease helps you understand lease terms, not provide legal advice.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        What file formats are supported?
+                        <span class="faq-icon">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Paste text or upload common document formats.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        How is my data handled?
+                        <span class="faq-icon">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Files are processed temporarily and not stored long-term.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">
+                        Is ClearLease free to use?
+                        <span class="faq-icon">▼</span>
+                    </button>
+                    <div class="faq-answer">
+                        Basic analysis is free. Some features may require an account.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dark Weight Section -->
+    <section class="dark-weight-section">
+        <div class="landing-container">
+            <div class="dark-weight-content">
+                <h2 class="dark-weight-title">Everything you need to review a lease with clarity</h2>
+                <p class="dark-weight-subtitle">Designed to help renters understand key terms before signing.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hesitation CTA Section -->
+    <section class="hesitation-cta-section">
+        <div class="landing-container">
+            <div class="hesitation-cta-content">
+                <h2 class="hesitation-cta-title">Still reviewing your lease?</h2>
+                <p class="hesitation-cta-subtitle">You can run an analysis before deciding.</p>
+                <a href="/analyze" class="cta-button">Analyze my lease</a>
+            </div>
+        </div>
+    </section>
 
     <!-- Testimonials Section -->
     <section class="testimonials-section">
@@ -438,5 +772,22 @@
             <p class="footer-text">© 2026 ClearLease. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- FAQ JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const faqQuestions = document.querySelectorAll('.faq-question');
+            
+            faqQuestions.forEach(question => {
+                question.addEventListener('click', function() {
+                    const answer = this.nextElementSibling;
+                    const icon = this.querySelector('.faq-icon');
+                    
+                    answer.classList.toggle('active');
+                    icon.classList.toggle('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
