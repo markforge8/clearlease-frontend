@@ -777,8 +777,6 @@
         <div class="navbar-links">
             <a href="/" class="navbar-link">Home</a>
             <a href="/analyze" class="navbar-link">Analyze</a>
-            <button id="signUpButton" class="navbar-button navbar-button-outline">Sign Up</button>
-            <button id="signInButton" class="navbar-button">Sign In</button>
         </div>
     </nav>
 
@@ -1014,60 +1012,6 @@
         });
     </script>
 
-    <!-- Navigation JavaScript -->
-    <script>
-        // Navigation Elements
-        const signInButton = document.getElementById('signInButton');
-        const signUpButton = document.getElementById('signUpButton');
 
-        // Event Listeners
-        if (signInButton) signInButton.addEventListener('click', () => {
-            window.location.href = '/analyze?auth=login';
-        });
-        
-        if (signUpButton) signUpButton.addEventListener('click', () => {
-            window.location.href = '/analyze?auth=signup';
-        });
-
-        // Check if user is already logged in
-        function checkAuthStatus() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Token exists, try to get user info
-                fetch('https://clearlease-production.up.railway.app/api/auth/me', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Logged in, update navigation
-                        if (signInButton) signInButton.style.display = 'none';
-                        if (signUpButton) signUpButton.style.display = 'none';
-                        // Add user menu or logout button
-                        const navbarLinks = document.querySelector('.navbar-links');
-                        if (navbarLinks) {
-                            const logoutButton = document.createElement('button');
-                            logoutButton.className = 'navbar-button navbar-button-outline';
-                            logoutButton.textContent = 'Logout';
-                            logoutButton.addEventListener('click', () => {
-                                localStorage.removeItem('token');
-                                localStorage.removeItem('user');
-                                window.location.href = '/';
-                            });
-                            navbarLinks.appendChild(logoutButton);
-                        }
-                    }
-                })
-                .catch(error => {
-                    // Error, keep sign in buttons
-                });
-            }
-        }
-
-        // Initialize auth status
-        checkAuthStatus();
-    </script>
 </body>
 </html>
