@@ -155,11 +155,27 @@ function updateNavigation(user) {
         if (signInButton) signInButton.style.display = 'none';
         if (signUpButton) signUpButton.style.display = 'none';
         if (saveAnalysisSection) saveAnalysisSection.style.display = 'none';
+        
+        // Add logout button to navbar
+        const navbarLinks = document.querySelector('.navbar-links');
+        if (navbarLinks && !document.querySelector('.navbar-logout')) {
+            const logoutButton = document.createElement('button');
+            logoutButton.className = 'navbar-button navbar-button-outline navbar-logout';
+            logoutButton.textContent = 'Logout';
+            logoutButton.addEventListener('click', handleLogout);
+            navbarLinks.appendChild(logoutButton);
+        }
     } else {
         // Not logged in
         if (signInButton) signInButton.style.display = 'inline-block';
         if (signUpButton) signUpButton.style.display = 'inline-block';
         if (saveAnalysisSection) saveAnalysisSection.style.display = 'block';
+        
+        // Remove logout button if it exists
+        const logoutButton = document.querySelector('.navbar-logout');
+        if (logoutButton) {
+            logoutButton.remove();
+        }
     }
 }
 
