@@ -3,13 +3,21 @@
 
 // API Configuration
 const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
-const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
-const API_INGEST_ENDPOINT = `${BACKEND_BASE_URL}/ingest`;
-const API_HISTORY_ENDPOINT = `${BACKEND_BASE_URL}/history`;
-const API_EXPORT_PDF_ENDPOINT = `${BACKEND_BASE_URL}/export/pdf`;
-const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
-const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
-const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
+// Ensure BACKEND_BASE_URL is always set
+const BASE_URL = BACKEND_BASE_URL || 'https://clearlease-production.up.railway.app';
+
+const API_ENDPOINT = BASE_URL + '/analyze';
+const API_INGEST_ENDPOINT = BASE_URL + '/ingest';
+const API_HISTORY_ENDPOINT = BASE_URL + '/history';
+const API_EXPORT_PDF_ENDPOINT = BASE_URL + '/export/pdf';
+const API_LOGIN_ENDPOINT = BASE_URL + '/api/auth/login';
+const API_REGISTER_ENDPOINT = BASE_URL + '/api/auth/register';
+const API_ME_ENDPOINT = BASE_URL + '/api/auth/me';
+
+// Debug: Log API endpoints
+console.log('BACKEND_BASE_URL:', BACKEND_BASE_URL);
+console.log('BASE_URL:', BASE_URL);
+console.log('API_HISTORY_ENDPOINT:', API_HISTORY_ENDPOINT);
 
 // DOM Elements
 const leaseTextarea = document.getElementById('leaseText');
@@ -773,6 +781,8 @@ async function fetchHistory() {
     if (!token) {
         throw new Error('User not logged in');
     }
+    
+    console.log('Calling fetchHistory with API_HISTORY_ENDPOINT:', API_HISTORY_ENDPOINT);
     
     const response = await fetch(API_HISTORY_ENDPOINT, {
         headers: {
