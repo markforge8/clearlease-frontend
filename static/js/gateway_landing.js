@@ -135,6 +135,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('user');
             // Update navigation
             updateNavigation(null);
+            // Check for auth parameter
+            checkAuthParameter();
         }
     } else {
         // Update navigation
@@ -143,17 +145,34 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (saveAnalysisSection) {
             saveAnalysisSection.style.display = 'block';
         }
+        // Check for auth parameter
+        checkAuthParameter();
     }
     
 
 });
 
+// Check for auth parameter in URL
+function checkAuthParameter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authParam = urlParams.get('auth');
+    
+    if (authParam === 'login' || authParam === 'signup') {
+        // Open auth modal
+        openAuthModal();
+        // Clear the parameter from URL
+        urlParams.delete('auth');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+}
+
 // Update navigation based on user status
 function updateNavigation(user) {
     if (user) {
         // Logged in
-        if (signInButton) signInButton.style.display = 'none';
-        if (signUpButton) signUpButton.style.display = 'none';
+        if (signInButton) signInButton.remove();
+        if (signUpButton) signUpButton.remove();
         if (saveAnalysisSection) saveAnalysisSection.style.display = 'none';
         
         // Add logout button to navbar

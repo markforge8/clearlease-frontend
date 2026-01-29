@@ -1022,11 +1022,11 @@
 
         // Event Listeners
         if (signInButton) signInButton.addEventListener('click', () => {
-            window.location.href = '/analyze';
+            window.location.href = '/analyze?auth=login';
         });
         
         if (signUpButton) signUpButton.addEventListener('click', () => {
-            window.location.href = '/analyze';
+            window.location.href = '/analyze?auth=signup';
         });
 
         // Check if user is already logged in
