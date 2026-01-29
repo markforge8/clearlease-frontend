@@ -594,21 +594,24 @@ async function handleAnalyze() {
         return;
     }
 
-    // Get user info if logged in
+    // Check if user is logged in
     const token = localStorage.getItem('token');
-    let userData;
     
-    if (token) {
-        try {
-            userData = await fetchUserInfo();
-            console.log('User info:', userData);
-        } catch (error) {
-            console.error('Error fetching user info:', error);
-            // Continue with analysis even if user info fetch fails
-            // Analysis should always be available
-        }
-    } else {
-        console.log('User not logged in, proceeding with free analysis');
+    if (!token) {
+        // User not logged in, open auth modal
+        openAuthModal();
+        return;
+    }
+    
+    // Get user info if logged in
+    let userData;
+    try {
+        userData = await fetchUserInfo();
+        console.log('User info:', userData);
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        // Continue with analysis even if user info fetch fails
+        // Analysis should always be available
     }
     
     // Reset UI
