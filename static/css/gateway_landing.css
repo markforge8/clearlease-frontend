@@ -108,6 +108,42 @@ body {
     cursor: not-allowed;
 }
 
+/* File Upload Section */
+.file-upload-section {
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background-color: #fafafa;
+    border: 2px dashed #e5e5e5;
+    border-radius: 8px;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+
+.file-upload-section:hover {
+    border-color: #1a1a1a;
+}
+
+.file-upload-label {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+}
+
+.file-upload-input {
+    display: block;
+    margin: 0 auto 1rem;
+    font-size: 0.9rem;
+    color: #666666;
+}
+
+.file-upload-hint {
+    font-size: 0.9rem;
+    color: #999999;
+    margin-top: 0.5rem;
+}
+
 /* Results Section */
 .results-section {
     margin-top: 4rem;

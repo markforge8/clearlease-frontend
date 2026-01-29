@@ -4,12 +4,14 @@
 // API Configuration
 const BACKEND_BASE_URL = 'https://clearlease-production.up.railway.app';
 const API_ENDPOINT = `${BACKEND_BASE_URL}/analyze`;
+const API_INGEST_ENDPOINT = `${BACKEND_BASE_URL}/ingest`;
 const API_LOGIN_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/login`;
 const API_REGISTER_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/register`;
 const API_ME_ENDPOINT = `${BACKEND_BASE_URL}/api/auth/me`;
 
 // DOM Elements
 const leaseTextarea = document.getElementById('leaseText');
+const fileUpload = document.getElementById('fileUpload');
 const analyzeButton = document.getElementById('analyzeButton');
 const resultsSection = document.getElementById('resultsSection');
 const riskItemsContainer = document.getElementById('riskItems');
@@ -468,18 +470,19 @@ function unlockAllFeatures() {
  */
 async function handleAnalyze() {
     const leaseText = leaseTextarea.value.trim();
+    const uploadedFile = fileUpload.files[0];
 
     // Validation
-    if (!leaseText) {
-        showError('Please paste your lease agreement text before analyzing.');
+    if (!leaseText && !uploadedFile) {
+        showError('Please paste your lease agreement text or upload a file before analyzing.');
         return;
     }
 
-    if (leaseText.length < 50) {
+    if (leaseText && leaseText.length < 50) {
         showError('Please provide a longer lease agreement text (at least 50 characters).');
         return;
     }
-
+    
     // Get user info if logged in
     const token = localStorage.getItem('token');
     let userData;
@@ -503,6 +506,35 @@ async function handleAnalyze() {
     analyzeButton.disabled = true;
 
     try {
+        let textToAnalyze = leaseText;
+        
+        // If file is uploaded, call /ingest endpoint
+        if (uploadedFile) {
+            updateLoadingMessage('Uploading file...');
+            const ingestResponse = await callIngestEndpoint(uploadedFile, token);
+            
+            // Check for error in ingest response
+            if (ingestResponse.error) {
+                throw new Error(ingestResponse.error);
+            }
+            
+            // Check if text exists
+            if (!ingestResponse.text) {
+                throw new Error('No text extracted from the file');
+            }
+            
+            textToAnalyze = ingestResponse.text;
+            
+            // Optional: Display source_type hint
+            if (ingestResponse.source_type) {
+                console.log('Source type:', ingestResponse.source_type);
+                // Add source type hint to results section
+                addSourceTypeHint(ingestResponse.source_type);
+            }
+        }
+        
+        updateLoadingMessage('Analyzing risks...');
+        
         // Prepare headers
         const headers = {
             'Content-Type': 'application/json'
@@ -517,7 +549,7 @@ async function handleAnalyze() {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
-                contract_text: leaseText
+                contract_text: textToAnalyze
             })
         });
 
@@ -543,6 +575,93 @@ async function handleAnalyze() {
         hideLoading();
         analyzeButton.disabled = false;
     }
+}
+
+/**
+ * Call the /ingest endpoint to extract text from a file
+ */
+async function callIngestEndpoint(file, token) {
+    updateLoadingMessage('Uploading file...');
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Prepare headers
+    const headers = {};
+    
+    // Add authorization header if token exists
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(API_INGEST_ENDPOINT, {
+        method: 'POST',
+        headers: headers,
+        body: formData
+    });
+    
+    updateLoadingMessage('Extracting text...');
+    
+    if (!response.ok) {
+        throw new Error(`Ingest failed: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+}
+
+/**
+ * Update the loading message
+ */
+function updateLoadingMessage(message) {
+    if (loadingState) {
+        loadingState.innerHTML = `<p>${message}</p>`;
+    }
+}
+
+/**
+ * Add source type hint to results section
+ */
+function addSourceTypeHint(sourceType) {
+    // Create hint element if it doesn't exist
+    let hintElement = document.getElementById('sourceTypeHint');
+    if (!hintElement) {
+        hintElement = document.createElement('div');
+        hintElement.id = 'sourceTypeHint';
+        hintElement.style.cssText = `
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #666666;
+        `;
+        
+        // Insert before results section
+        if (resultsSection) {
+            resultsSection.parentNode.insertBefore(hintElement, resultsSection);
+        }
+    }
+    
+    // Set hint text based on source type
+    let hintText = '';
+    switch (sourceType) {
+        case 'pdf':
+            hintText = 'PDF extracted text';
+            break;
+        case 'image':
+            hintText = 'OCR extracted text';
+            break;
+        case 'txt':
+            hintText = 'Text file content';
+            break;
+        default:
+            hintText = 'Extracted text';
+    }
+    
+    hintElement.innerHTML = `<p>${hintText}</p>`;
+    hintElement.style.display = 'block';
 }
 
 /**
@@ -874,6 +993,7 @@ function normalizeSeverity(severity) {
  */
 function showLoading() {
     loadingState.style.display = 'block';
+    updateLoadingMessage('Analyzing risks...');
 }
 
 /**
