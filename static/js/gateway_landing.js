@@ -1060,23 +1060,21 @@ function displayAnalysisResults(data) {
         }
     }
 
-    // Always render basic analysis
+    // Follow correct rendering priority
     if (data.basic_result) {
+        // Render basic analysis if available
         renderBasicAnalysis(data.basic_result);
-    } else {
-        // If no basic_result, show placeholder state
-        showAnalysisLocked();
-    }
-
-    // Handle locked status
-    if (data.locked) {
-        // Show upgrade CTA for locked users
-        renderUpgradeCTA();
-    } else {
-        // Show full analysis for unlocked users
+        
+        // Render full analysis if also available
         if (data.full_result) {
             renderFullAnalysis(data.full_result);
         }
+    } else if (data.full_result) {
+        // Render full analysis if basic is not available
+        renderFullAnalysis(data.full_result);
+    } else {
+        // Show unavailable state if neither is available
+        showUnavailable();
     }
 
     // Show results section
@@ -1087,15 +1085,15 @@ function displayAnalysisResults(data) {
 }
 
 /**
- * Show analysis locked state
+ * Show analysis unavailable state
  */
-function showAnalysisLocked() {
+function showUnavailable() {
     riskItemsContainer.innerHTML = `
         <div class="risk-item">
             <div class="risk-item-header">
-                <div class="risk-item-title">Analysis Data</div>
+                <div class="risk-item-title">Analysis Unavailable</div>
             </div>
-            <div class="risk-item-message">Analysis data is being processed. Please check back later.</div>
+            <div class="risk-item-message">Analysis data is not available. Please try again later.</div>
         </div>
     `;
 }
