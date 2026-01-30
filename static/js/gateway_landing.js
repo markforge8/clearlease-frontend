@@ -861,16 +861,16 @@ async function loadHistoryItem(analysisId) {
         // Transform history item data to match displayAnalysisResults expected format
         const transformedData = {
             isSavedAnalysis: true,
-            basic_result: {
+            basic_result: historyItem.output_snapshot ? {
                 overview: {
-                    risk_level: historyItem.output_snapshot.risk_level,
-                    summary: historyItem.output_snapshot.summary
+                    risk_level: historyItem.output_snapshot.risk_level || 'UNKNOWN',
+                    summary: historyItem.output_snapshot.summary || ''
                 },
                 key_findings: historyItem.output_snapshot.risks || [],
                 next_actions: []
-            },
+            } : null,
             full_result: null,
-            locked: false
+            locked: !historyItem.output_snapshot
         };
         
         displayAnalysisResults(transformedData);
@@ -1064,8 +1064,8 @@ function displayAnalysisResults(data) {
     if (data.basic_result) {
         renderBasicAnalysis(data.basic_result);
     } else {
-        // If no basic_result, show no risks found
-        showNoRisksFound();
+        // If no basic_result, show placeholder state
+        showAnalysisLocked();
     }
 
     // Handle locked status
@@ -1084,6 +1084,20 @@ function displayAnalysisResults(data) {
 
     // Scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Show analysis locked state
+ */
+function showAnalysisLocked() {
+    riskItemsContainer.innerHTML = `
+        <div class="risk-item">
+            <div class="risk-item-header">
+                <div class="risk-item-title">Analysis Unavailable</div>
+            </div>
+            <div class="risk-item-message">This analysis is locked or no longer available. Please upgrade to view the complete results.</div>
+        </div>
+    `;
 }
 
 /**
