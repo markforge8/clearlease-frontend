@@ -814,6 +814,8 @@ function displayHistory(history) {
     
     const historyHTML = history.map(item => {
         const date = new Date(item.created_at).toLocaleString();
+        // Use analysis_id instead of id to match backend field name
+        const analysisId = item.analysis_id || item.id;
         return `
             <div class="history-item">
                 <div class="history-item-header">
@@ -822,8 +824,8 @@ function displayHistory(history) {
                 </div>
                 <div class="history-item-summary">${item.summary}</div>
                 <div class="history-item-actions">
-                    <button class="history-item-button" onclick="loadHistoryItem('${item.id}')">View Details</button>
-                    <button class="history-item-button" onclick="exportToPDF('${item.id}')">Export PDF</button>
+                    <button class="history-item-button" onclick="loadHistoryItem('${analysisId}')">View Details</button>
+                    <button class="history-item-button" onclick="exportToPDF('${analysisId}')">Export PDF</button>
                 </div>
             </div>
         `;
@@ -836,6 +838,12 @@ function displayHistory(history) {
  * Load a specific history item
  */
 async function loadHistoryItem(analysisId) {
+    // Check if analysisId is undefined
+    if (!analysisId) {
+        console.error('loadHistoryItem called with undefined analysisId');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -923,6 +931,12 @@ function addSavedAnalysisIndication() {
  * Export analysis to PDF
  */
 async function exportToPDF(analysisId) {
+    // Check if analysisId is undefined
+    if (!analysisId) {
+        console.error('exportToPDF called with undefined analysisId');
+        return;
+    }
+    
     const token = localStorage.getItem('token');
     
     if (!token) {
