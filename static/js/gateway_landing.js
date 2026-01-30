@@ -870,7 +870,7 @@ async function loadHistoryItem(analysisId) {
                 next_actions: []
             } : null,
             full_result: null,
-            locked: !historyItem.output_snapshot
+            locked: false // Always false for logged-in users viewing history items
         };
         
         displayAnalysisResults(transformedData);
@@ -1093,9 +1093,9 @@ function showAnalysisLocked() {
     riskItemsContainer.innerHTML = `
         <div class="risk-item">
             <div class="risk-item-header">
-                <div class="risk-item-title">Analysis Unavailable</div>
+                <div class="risk-item-title">Analysis Data</div>
             </div>
-            <div class="risk-item-message">This analysis is locked or no longer available. Please upgrade to view the complete results.</div>
+            <div class="risk-item-message">Analysis data is being processed. Please check back later.</div>
         </div>
     `;
 }
