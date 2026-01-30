@@ -870,7 +870,7 @@ async function loadHistoryItem(analysisId) {
                 next_actions: []
             } : null,
             full_result: null,
-            locked: false // Always false for logged-in users viewing history items
+            view_state: historyItem.view_state || 'READY' // Use view_state from backend
         };
         
         displayAnalysisResults(transformedData);
@@ -1060,21 +1060,41 @@ function displayAnalysisResults(data) {
         }
     }
 
-    // Follow correct rendering priority
-    if (data.basic_result) {
-        // Render basic analysis if available
-        renderBasicAnalysis(data.basic_result);
-        
-        // Render full analysis if also available
-        if (data.full_result) {
-            renderFullAnalysis(data.full_result);
-        }
-    } else if (data.full_result) {
-        // Render full analysis if basic is not available
-        renderFullAnalysis(data.full_result);
-    } else {
-        // Show unavailable state if neither is available
-        showUnavailable();
+    // Use view_state as the only rendering condition
+    switch (data.view_state) {
+        case 'READY':
+            // Render analysis content with priority
+            if (data.basic_result) {
+                renderBasicAnalysis(data.basic_result);
+                if (data.full_result) {
+                    renderFullAnalysis(data.full_result);
+                }
+            } else if (data.full_result) {
+                renderFullAnalysis(data.full_result);
+            } else {
+                showUnavailable();
+            }
+            break;
+        case 'LOCKED':
+            // Show upgrade CTA
+            renderUpgradeCTA();
+            break;
+        case 'UNAVAILABLE':
+            // Show unavailable state
+            showUnavailable();
+            break;
+        default:
+            // Default to READY state
+            if (data.basic_result) {
+                renderBasicAnalysis(data.basic_result);
+                if (data.full_result) {
+                    renderFullAnalysis(data.full_result);
+                }
+            } else if (data.full_result) {
+                renderFullAnalysis(data.full_result);
+            } else {
+                showUnavailable();
+            }
     }
 
     // Show results section
