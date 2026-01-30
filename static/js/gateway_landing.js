@@ -846,7 +846,7 @@ async function loadHistoryItem(analysisId) {
     try {
         updateLoadingMessage('Loading saved analysis...');
         
-        const response = await fetch(`${API_ENDPOINT}/${analysisId}`, {
+        const response = await fetch(`${BASE_URL}/history/${analysisId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -856,10 +856,24 @@ async function loadHistoryItem(analysisId) {
             throw new Error(`Failed to load analysis: ${response.status} ${response.statusText}`);
         }
         
-        const data = await response.json();
-        // Add flag to indicate this is a saved analysis
-        data.isSavedAnalysis = true;
-        displayAnalysisResults(data);
+        const historyItem = await response.json();
+        
+        // Transform history item data to match displayAnalysisResults expected format
+        const transformedData = {
+            isSavedAnalysis: true,
+            basic_result: {
+                overview: {
+                    risk_level: historyItem.output_snapshot.risk_level,
+                    summary: historyItem.output_snapshot.summary
+                },
+                key_findings: historyItem.output_snapshot.risks || [],
+                next_actions: []
+            },
+            full_result: null,
+            locked: false
+        };
+        
+        displayAnalysisResults(transformedData);
     } catch (error) {
         console.error('Error loading history item:', error);
         showError(`Failed to load analysis: ${error.message}`);
