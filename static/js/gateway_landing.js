@@ -1064,7 +1064,7 @@ function displayAnalysisResults(data) {
     hideAllSections();
 
     // Check if this is a saved analysis
-    if (data.isSavedAnalysis) {
+    if (data.isSavedAnalysis && (data.view_state !== 'READY' || (!data.basic_result && !data.full_result))) {
         addSavedAnalysisIndication();
     } else {
         // Remove indication if it exists
