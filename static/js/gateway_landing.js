@@ -51,6 +51,49 @@ explicitLoginButton.addEventListener('click', () => {
     loginSection.style.display = 'block';
 });
 
+// Custom file upload button
+const customFileButton = document.getElementById('customFileButton');
+const fileStatus = document.getElementById('fileStatus');
+if (customFileButton) {
+    customFileButton.addEventListener('click', () => {
+        fileUpload.click();
+    });
+}
+
+// File upload change event for status update
+if (fileUpload) {
+    fileUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Show success status
+            fileStatus.textContent = `✓ File selected: ${file.name}`;
+            fileStatus.style.color = '#007bff';
+            fileStatus.style.fontSize = '16px';
+            fileStatus.style.fontWeight = '500';
+            // Highlight upload section
+            const uploadSection = fileUpload.closest('.file-upload-section');
+            if (uploadSection) {
+                uploadSection.style.border = '2px solid #007bff';
+                uploadSection.style.borderRadius = '4px';
+                uploadSection.style.padding = '15px';
+            }
+        } else {
+            // Clear status
+            fileStatus.textContent = '';
+            fileStatus.style.color = '';
+            fileStatus.style.fontSize = '';
+            fileStatus.style.fontWeight = '';
+            // Reset upload section style
+            const uploadSection = fileUpload.closest('.file-upload-section');
+            if (uploadSection) {
+                uploadSection.style.border = '';
+                uploadSection.style.borderRadius = '';
+                uploadSection.style.padding = '';
+            }
+        }
+    });
+}
+
 // Handle Enter key in textarea (Ctrl+Enter or Cmd+Enter)
 leaseTextarea.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -74,6 +117,9 @@ passwordInput.addEventListener('keydown', (e) => {
 
 // Initialize app
 window.addEventListener('DOMContentLoaded', async () => {
+    // Immediately show login button on page load
+    explicitLoginButton.style.display = 'block';
+    
     // Check if user is already logged in
     const token = localStorage.getItem('token');
     if (token) {
@@ -93,12 +139,9 @@ window.addEventListener('DOMContentLoaded', async () => {
             // Token invalid, clear it
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // Show login button when signed out
+            // Keep login button visible when signed out
             explicitLoginButton.style.display = 'block';
         }
-    } else {
-        // Show login button when signed out
-        explicitLoginButton.style.display = 'block';
     }
     
 

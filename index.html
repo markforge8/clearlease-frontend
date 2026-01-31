@@ -149,7 +149,9 @@
             <section class="input-section">
                 <div class="file-upload-section">
                     <label for="fileUpload" class="file-upload-label">Upload a file (PDF, TXT, or image)</label>
-                    <input type="file" id="fileUpload" class="file-upload-input" accept=".pdf,.txt,.jpg,.jpeg,.png">
+                    <input type="file" id="fileUpload" class="file-upload-input" accept=".pdf,.txt,.jpg,.jpeg,.png" style="display: none;">
+                    <button id="customFileButton" class="custom-file-button">Choose file</button>
+                    <p id="fileStatus" class="file-status"></p>
                     <p class="file-upload-hint">or paste text below</p>
                 </div>
                 <textarea 
